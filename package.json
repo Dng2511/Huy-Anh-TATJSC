@@ -1,0 +1,14 @@
+{
+  "name": "huy-anh-tatjsc-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "frontend:dev": "npm --prefix frontend-window run dev",
+    "frontend:build": "npm --prefix frontend-window run build",
+    "frontend:lint": "npm --prefix frontend-window run lint",
+    "backend:dev": "npm --prefix server run dev",
+    "backend:start": "npm --prefix server run start",
+    "backend:seed": "npm --prefix server run seed",
+    "optimizer:dev": "c:/Dng/Huy-Anh-TATJSC/.venv/Scripts/python.exe -m uvicorn app:app --app-dir server/optimizer-service --host 127.0.0.1 --port 8000"
+  }
+}

@@ -1,0 +1,36 @@
+.nav-card {
+  height: 100%;
+  border: 1px solid rgba(15, 74, 70, 0.2);
+  background: linear-gradient(180deg, #ffffff, #f8fbfa);
+}
+
+.nav-card-footer {
+  margin-top: 14px;
+}
+
+.metric-card {
+  border: 1px solid rgba(15, 74, 70, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+}
+
+.metric-card .ant-statistic-title {
+  font-weight: 600;
+  color: #4a5d5a;
+}
+
+.metric-card .ant-statistic-content {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.8rem;
+  color: #0f302d;
+}
+
+.revenue-card {
+  background: linear-gradient(160deg, rgba(14, 107, 99, 0.1), rgba(250, 196, 78, 0.24));
+}
+
+@media (max-width: 768px) {
+  .metric-card .ant-statistic-content {
+    font-size: 1.35rem;
+  }
+}

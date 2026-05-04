@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap');
+
+.transport-layout {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(250, 196, 78, 0.14), transparent 40%),
+    radial-gradient(circle at 92% 10%, rgba(14, 107, 99, 0.12), transparent 36%),
+    linear-gradient(145deg, #fafaf6 0%, #f2f7f3 52%, #fcfcf9 100%);
+  color: #173230;
+}
+
+.transport-sider {
+  background: linear-gradient(180deg, #0f4743 0%, #0b3431 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  position: sticky !important;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+}
+
+.sider-brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  color: #f1f9f8;
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.transport-menu {
+  background: transparent;
+  color: #dcf0ee;
+  border-inline-end: 0 !important;
+}
+
+.transport-menu .ant-menu-item {
+  margin-inline: 10px;
+  width: calc(100% - 20px);
+  border-radius: 10px;
+  color: #dcf0ee;
+}
+
+.transport-menu .ant-menu-item:not(.ant-menu-item-selected):hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+}
+
+.transport-menu .ant-menu-item:not(.ant-menu-item-selected):active {
+  background: rgba(255, 255, 255, 0.26) !important;
+}
+
+.transport-menu.ant-menu-inline .ant-menu-item-selected {
+  background: rgba(165, 159, 145, 0.22);
+  color: #ffffff;
+}
+
+.transport-header {
+  height: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 28px;
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(10, 51, 47, 0.1);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.heading-title.ant-typography {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 2rem);
+  letter-spacing: -0.02em;
+  color: #0a2424;
+}
+
+
+.heading-subtitle {
+  color: #415b58;
+}
+
+.language-flag-switcher {
+  background: rgba(7, 45, 42, 0.08);
+  border: 1px solid rgba(7, 45, 42, 0.12);
+}
+
+.flag-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.flag-image {
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(12, 45, 41, 0.12);
+}
+
+.header-action-btn {
+  width: 172px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transport-content {
+  padding: 18px;
+}
+
+.module-card {
+  margin-top: 16px;
+  border: 1px solid rgba(15, 74, 70, 0.12);
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+}
+
+.module-card .ant-card-body,
+.module-card .ant-typography,
+.module-card .ant-table,
+.module-card .ant-descriptions {
+  color: #1f3d3a;
+}
+
+.module-card .ant-card-head-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.05rem;
+  color: #162e2c;
+}
+
+.module-card .ant-typography h4 {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 1200px) {
+  .transport-content {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .transport-header {
+    padding: 18px 16px;
+  }
+
+  .language-control {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .transport-content {
+    padding: 10px;
+  }
+}
