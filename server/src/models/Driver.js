@@ -1,15 +1,40 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose');
 
 const driverSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    license: { type: String, required: true },
-    phone: { type: String, required: true, unique: true, index: true },
-    status: { type: String, required: true },
-    schedule: { type: String, required: true },
-    score: { type: Number, required: true },
+    id: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+      match: /^[0-9\-\+\s]+$/,
+    },
+    licenseNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
+    },
+    status: {
+      type: String,
+      enum: ['available', 'on_trip', 'off'],
+      default: 'available',
+    },
   },
-  { timestamps: true }
-)
+  {
+    timestamps: true,
+  }
+);
 
-export const Driver = mongoose.model('Driver', driverSchema)
+module.exports = mongoose.model('Driver', driverSchema);

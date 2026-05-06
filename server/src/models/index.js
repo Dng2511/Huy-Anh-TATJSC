@@ -1,10 +1,7 @@
-export { CostRow } from './CostRow.js'
-export { Driver } from './Driver.js'
-export { Inventory } from './Inventory.js'
-export { Invoice } from './Invoice.js'
-export { Metric } from './Metric.js'
-export { Order } from './Order.js'
-export { TrackingVehicle } from './TrackingVehicle.js'
-export { Trip } from './Trip.js'
-export { User } from './User.js'
-export { Vehicle } from './Vehicle.js'
+// Export all models from a single location for easier imports
+module.exports = {
+  Vehicle: require('./Vehicle'),
+  Driver: require('./Driver'),
+  Order: require('./Order'),
+  Trip: require('./Trip'),
+};

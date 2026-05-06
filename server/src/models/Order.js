@@ -1,18 +1,39 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
   {
-    code: { type: String, required: true, unique: true, index: true },
-    sender: { type: String, required: true },
-    receiver: { type: String, required: true },
-    address: { type: String, required: true },
-    cargoType: { type: String, required: true },
-    dimension: { type: String, required: true },
-    weight: { type: String, required: true },
-    status: { type: String, required: true },
-    eta: { type: String, required: true },
+    id: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    type: {
+      type: String,
+      enum: ['IN', 'OUT'],
+      required: true,
+      description: 'OUT: Hải Phòng → A, IN: B → Hải Phòng',
+    },
+    location: {
+      type: String,
+      enum: ['A', 'B'],
+      required: true,
+      description: 'Destination location',
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'assigned', 'done'],
+      default: 'pending',
+    },
+    cost: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
   },
-  { timestamps: true }
-)
+  {
+    timestamps: true,
+  }
+);
 
-export const Order = mongoose.model('Order', orderSchema)
+module.exports = mongoose.model('Order', orderSchema);

@@ -1,15 +1,57 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose');
 
 const tripSchema = new mongoose.Schema(
   {
-    route: { type: String, required: true },
-    vehicle: { type: String, required: true },
-    driver: { type: String, required: true },
-    orders: [{ type: String, required: true }],
-    optimize: { type: String, required: true },
-    status: { type: String, required: true },
+    id: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    vehicleId: {
+      type: String,
+      required: true,
+      ref: 'Vehicle',
+    },
+    driverId: {
+      type: String,
+      required: true,
+      ref: 'Driver',
+    },
+    order1Id: {
+      type: String,
+      required: true,
+      ref: 'Order',
+    },
+    order2Id: {
+      type: String,
+      ref: 'Order',
+      default: null,
+    },
+    route: {
+      stopA: {
+        type: String,
+        required: true,
+      },
+      stopB: {
+        type: String,
+        required: true,
+      },
+    },
+    status: {
+      type: String,
+      enum: ['planned', 'running', 'completed'],
+      default: 'planned',
+    },
+    cost: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
   },
-  { timestamps: true }
-)
+  {
+    timestamps: true,
+  }
+);
 
-export const Trip = mongoose.model('Trip', tripSchema)
+module.exports = mongoose.model('Trip', tripSchema);

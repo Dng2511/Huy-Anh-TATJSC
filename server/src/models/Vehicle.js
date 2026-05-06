@@ -1,15 +1,35 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose');
 
 const vehicleSchema = new mongoose.Schema(
   {
-    plate: { type: String, required: true, unique: true, index: true },
-    type: { type: String, required: true },
-    capacity: { type: String, required: true },
-    status: { type: String, required: true },
-    fuel: { type: Number, required: true },
-    route: { type: String, required: true },
+    id: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    licensePlate: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
+    },
+    fuelRate: {
+      type: Number,
+      required: true,
+      min: 0,
+      description: 'L/100km',
+    },
+    status: {
+      type: String,
+      enum: ['idle', 'running', 'maintenance'],
+      default: 'idle',
+    },
   },
-  { timestamps: true }
-)
+  {
+    timestamps: true,
+  }
+);
 
-export const Vehicle = mongoose.model('Vehicle', vehicleSchema)
+module.exports = mongoose.model('Vehicle', vehicleSchema);

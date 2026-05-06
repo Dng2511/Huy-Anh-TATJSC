@@ -1,23 +1,34 @@
 {
-  "name": "huyanh-server",
+  "name": "logistics-management-api-server",
   "version": "1.0.0",
-  "private": true,
-  "type": "module",
+  "description": "Node.js API server for managing vehicles, drivers, orders, and trips in a logistics system.",
+  "main": "src/index.js",
+  "type": "commonjs",
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "seed": "node src/seed/seed.js"
+  },
+  "keywords": [
+    "express",
+    "mongoose",
+    "logistics",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=14"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "huy-anh-tatjsc-workspace": "file:..",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "mongoose": "^8.9.5"
+    "express-async-errors": "^3.1.1",
+    "joi": "^18.2.1",
+    "mongoose": "^8.10.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.9"
   }
 }

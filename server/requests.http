@@ -1,0 +1,208 @@
+### Base URL
+@baseUrl = http://localhost:3000
+
+### ========== VEHICLE ENDPOINTS ==========
+
+### Create a Vehicle
+POST {{baseUrl}}/api/vehicles
+Content-Type: application/json
+
+{
+  "id": "VH001",
+  "licensePlate": "ABC123XY",
+  "fuelRate": 8.5,
+  "status": "idle"
+}
+
+### Get All Vehicles
+GET {{baseUrl}}/api/vehicles
+
+### Get Vehicle by ID
+GET {{baseUrl}}/api/vehicles/VH001
+
+### Update Vehicle
+PUT {{baseUrl}}/api/vehicles/VH001
+Content-Type: application/json
+
+{
+  "id": "VH001",
+  "licensePlate": "ABC123XY",
+  "fuelRate": 7.8,
+  "status": "idle"
+}
+
+### Delete Vehicle
+DELETE {{baseUrl}}/api/vehicles/VH001
+
+### ========== DRIVER ENDPOINTS ==========
+
+### Create a Driver
+POST {{baseUrl}}/api/drivers
+Content-Type: application/json
+
+{
+  "id": "DR001",
+  "name": "Nguyễn Văn A",
+  "phone": "0912345678",
+  "licenseNumber": "DL123456",
+  "status": "available"
+}
+
+### Get All Drivers
+GET {{baseUrl}}/api/drivers
+
+### Get Driver by ID
+GET {{baseUrl}}/api/drivers/DR001
+
+### Update Driver
+PUT {{baseUrl}}/api/drivers/DR001
+Content-Type: application/json
+
+{
+  "id": "DR001",
+  "name": "Nguyễn Văn A",
+  "phone": "0987654321",
+  "licenseNumber": "DL123456",
+  "status": "available"
+}
+
+### Delete Driver
+DELETE {{baseUrl}}/api/drivers/DR001
+
+### ========== ORDER ENDPOINTS ==========
+
+### Create Order (Type: OUT - Hải Phòng → A)
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{
+  "id": "ORD001",
+  "type": "OUT",
+  "location": "A",
+  "status": "pending",
+  "cost": 500000
+}
+
+### Create Order (Type: IN - B → Hải Phòng)
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{
+  "id": "ORD002",
+  "type": "IN",
+  "location": "B",
+  "status": "pending",
+  "cost": 600000
+}
+
+### Get All Orders
+GET {{baseUrl}}/api/orders
+
+### Get Order by ID
+GET {{baseUrl}}/api/orders/ORD001
+
+### Update Order
+PUT {{baseUrl}}/api/orders/ORD001
+Content-Type: application/json
+
+{
+  "id": "ORD001",
+  "type": "OUT",
+  "location": "A",
+  "status": "assigned",
+  "cost": 500000
+}
+
+### Delete Order
+DELETE {{baseUrl}}/api/orders/ORD001
+
+### ========== TRIP ENDPOINTS ==========
+
+### Create a Trip (Single Order)
+POST {{baseUrl}}/api/trips
+Content-Type: application/json
+
+{
+  "id": "TRIP001",
+  "vehicleId": "VH001",
+  "driverId": "DR001",
+  "order1Id": "ORD001",
+  "route": {
+    "stopA": "Hải Phòng",
+    "stopB": "Location A"
+  },
+  "status": "planned",
+  "cost": 500000
+}
+
+### Create a Trip (Two Orders)
+POST {{baseUrl}}/api/trips
+Content-Type: application/json
+
+{
+  "id": "TRIP002",
+  "vehicleId": "VH001",
+  "driverId": "DR001",
+  "order1Id": "ORD001",
+  "order2Id": "ORD002",
+  "route": {
+    "stopA": "Hải Phòng",
+    "stopB": "Location A"
+  },
+  "status": "planned",
+  "cost": 1100000
+}
+
+### Get All Trips
+GET {{baseUrl}}/api/trips
+
+### Get Trip by ID
+GET {{baseUrl}}/api/trips/TRIP001
+
+### Get Trips by Vehicle ID
+GET {{baseUrl}}/api/trips/vehicle/VH001
+
+### Get Trips by Driver ID
+GET {{baseUrl}}/api/trips/driver/DR001
+
+### Update Trip Status
+PUT {{baseUrl}}/api/trips/TRIP001
+Content-Type: application/json
+
+{
+  "id": "TRIP001",
+  "vehicleId": "VH001",
+  "driverId": "DR001",
+  "order1Id": "ORD001",
+  "route": {
+    "stopA": "Hải Phòng",
+    "stopB": "Location A"
+  },
+  "status": "running",
+  "cost": 500000
+}
+
+### Complete Trip
+PUT {{baseUrl}}/api/trips/TRIP001
+Content-Type: application/json
+
+{
+  "id": "TRIP001",
+  "vehicleId": "VH001",
+  "driverId": "DR001",
+  "order1Id": "ORD001",
+  "route": {
+    "stopA": "Hải Phòng",
+    "stopB": "Location A"
+  },
+  "status": "completed",
+  "cost": 500000
+}
+
+### Delete Trip
+DELETE {{baseUrl}}/api/trips/TRIP001
+
+### ========== HEALTH CHECK ==========
+
+### Server Health Check
+GET {{baseUrl}}/health

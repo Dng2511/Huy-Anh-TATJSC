@@ -1,0 +1,91 @@
+const Vehicle = require('../models/Vehicle');
+
+// Create a new vehicle
+exports.createVehicle = async (req, res) => {
+  try {
+    const { id, licensePlate, fuelRate, status } = req.body;
+
+    const existingVehicle = await Vehicle.findOne({
+      $or: [{ id }, { licensePlate }],
+    });
+
+    if (existingVehicle) {
+      return res.status(400).json({
+        error: 'Vehicle with this ID or license plate already exists',
+      });
+    }
+
+    const vehicle = new Vehicle({
+      id,
+      licensePlate,
+      fuelRate,
+      status,
+    });
+
+    await vehicle.save();
+    res.status(201).json(vehicle);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Get all vehicles
+exports.getAllVehicles = async (req, res) => {
+  try {
+    const vehicles = await Vehicle.find();
+    res.status(200).json(vehicles);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get a single vehicle by ID
+exports.getVehicleById = async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findOne({ id: req.params.id });
+
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.status(200).json(vehicle);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update a vehicle
+exports.updateVehicle = async (req, res) => {
+  try {
+    const { id, licensePlate, fuelRate, status } = req.body;
+
+    const vehicle = await Vehicle.findOneAndUpdate(
+      { id: req.params.id },
+      { id, licensePlate, fuelRate, status },
+      { new: true, runValidators: true }
+    );
+
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.status(200).json(vehicle);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Delete a vehicle
+exports.deleteVehicle = async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findOneAndDelete({ id: req.params.id });
+
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.status(200).json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

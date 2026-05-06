@@ -1,133 +1,219 @@
-# Hướng dẫn sử dụng Backend
+# Logistics Management API Server
 
-Tài liệu ngắn hướng dẫn cài đặt và chạy phần backend của dự án.
+A Node.js API server for managing vehicles, drivers, orders, and trips in a logistics system.
 
-## Mô tả
-Repository chứa backend Node.js (Express + Mongoose) và một dịch vụ tối ưu hóa nhỏ bằng Python trong `optimizer-service/`.
+## Features
 
-## Yêu cầu
-- Node.js 18+ và npm
-- MongoDB (uri kết nối)
-- Python 3.8+ (chỉ để chạy `optimizer-service` nếu cần)
+- **Vehicle Management**: Create, read, update, delete vehicles with tracking of status and fuel consumption
+- **Driver Management**: Manage drivers with license and status tracking
+- **Order Management**: Handle orders with location and cost information
+- **Trip Management**: Create and manage trips that link vehicles, drivers, and orders
+- **MongoDB Integration**: Persistent data storage using MongoDB
+- **RESTful API**: Clean and intuitive REST endpoints
+- **Error Handling**: Comprehensive error handling and validation
 
-## Cài đặt
-1. Clone repository và chuyển vào thư mục dự án:
+## Prerequisites
 
-```bash
-cd server
-npm install
+- Node.js (v14 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn
+
+## Installation
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Configure environment variables:**
+   Create a `.env` file in the project root with the following variables:
+   ```env
+   PORT=3000
+   MONGODB_URI=mongodb://localhost:27017/logistics
+   JWT_SECRET=your_jwt_secret_key_here
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=password
+   ROUTE_OPTIMIZER_URL=http://localhost:5000
+   ```
+
+3. **Start the server:**
+   ```bash
+   npm run dev  # Development mode with hot-reload
+   npm start    # Production mode
+   ```
+
+The server will start on the configured PORT (default: 3000).
+
+## API Endpoints
+
+### Health Check
+- `GET /health` - Server health status
+
+### Vehicles
+- `POST /api/vehicles` - Create a new vehicle
+- `GET /api/vehicles` - Get all vehicles
+- `GET /api/vehicles/:id` - Get a specific vehicle
+- `PUT /api/vehicles/:id` - Update a vehicle
+- `DELETE /api/vehicles/:id` - Delete a vehicle
+
+**Vehicle Model:**
+```json
+{
+  "id": "VH001",
+  "licensePlate": "ABC123",
+  "fuelRate": 8.5,
+  "status": "idle"
+}
 ```
 
-2. Tạo file `.env` ở gốc (bên cạnh `package.json`) chứa biến môi trường cần thiết. Ví dụ:
+### Drivers
+- `POST /api/drivers` - Create a new driver
+- `GET /api/drivers` - Get all drivers
+- `GET /api/drivers/:id` - Get a specific driver
+- `PUT /api/drivers/:id` - Update a driver
+- `DELETE /api/drivers/:id` - Delete a driver
 
-```
-MONGODB_URI=mongodb://user:pass@host:port/database
-PORT=3000
-JWT_SECRET=your_jwt_secret
-# Initial admin account (optional but recommended)
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=strongpassword
-ADMIN_NAME=Administrator
-```
-
-Lưu ý: `MONGODB_URI` và `JWT_SECRET` là bắt buộc — ứng dụng sẽ lỗi nếu các biến này chưa cấu hình.
-
-## Scripts hữu ích
-- `npm run dev` — chạy trong môi trường phát triển (nodemon), lắng nghe thay đổi trong `src/`.
-- `npm start` — chạy production: `node src/server.js`.
-- `npm run seed` — chạy script seed dữ liệu (`src/seed/seed.js`).
-
-Ví dụ chạy dev:
-
-```bash
-npm run dev
+**Driver Model:**
+```json
+{
+  "id": "DR001",
+  "name": "John Doe",
+  "phone": "0912345678",
+  "licenseNumber": "DL123456",
+  "status": "available"
+}
 ```
 
-## Cấu hình kết nối DB
-Kết nối tới MongoDB được đọc từ biến môi trường `MONGODB_URI` (xem `src/config/db.js`).
+### Orders
+- `POST /api/orders` - Create a new order
+- `GET /api/orders` - Get all orders
+- `GET /api/orders/:id` - Get a specific order
+- `PUT /api/orders/:id` - Update an order
+- `DELETE /api/orders/:id` - Delete an order
 
-## Dịch vụ tối ưu hóa (Python)
-Thư mục `optimizer-service/` chứa một dịch vụ Python độc lập. Để chạy:
-
-```bash
-cd optimizer-service
-python -m venv .venv
-.venv\Scripts\activate    # Windows
-pip install -r requirements.txt
-python app.py
+**Order Model:**
+```json
+{
+  "id": "ORD001",
+  "type": "OUT",
+  "location": "A",
+  "status": "pending",
+  "cost": 500000
+}
 ```
 
-## Seed dữ liệu
-Để nạp dữ liệu mẫu, chạy:
+Order Types:
+- `OUT`: Hải Phòng → A
+- `IN`: B → Hải Phòng
 
-```bash
-npm run seed
+### Trips
+- `POST /api/trips` - Create a new trip
+- `GET /api/trips` - Get all trips
+- `GET /api/trips/:id` - Get a specific trip
+- `PUT /api/trips/:id` - Update a trip
+- `DELETE /api/trips/:id` - Delete a trip
+- `GET /api/trips/vehicle/:vehicleId` - Get trips by vehicle
+- `GET /api/trips/driver/:driverId` - Get trips by driver
+
+**Trip Model:**
+```json
+{
+  "id": "TRIP001",
+  "vehicleId": "VH001",
+  "driverId": "DR001",
+  "order1Id": "ORD001",
+  "order2Id": "ORD002",
+  "route": {
+    "stopA": "Hải Phòng",
+    "stopB": "Location A"
+  },
+  "status": "planned",
+  "cost": 1000000
+}
 ```
 
-## Tài liệu schema
-Chi tiết schema và cấu trúc dữ liệu: xem `DATABASE_SCHEMA.md`.
+## Status Enums
 
-## Tệp quan trọng
-- Cấu hình DB: `src/config/db.js`
-- Điểm vào server: `src/server.js`
-- Routes chính: `src/routes/` và `src/routes/routeOptimization.js`
-- Scripts seed: `src/seed/seed.js`
+### Vehicle Status
+- `idle` - Vehicle is available
+- `running` - Vehicle is in use
+- `maintenance` - Vehicle is under maintenance
 
-## Ghi chú
-- Nếu gặp lỗi kết nối MongoDB, kiểm tra `MONGODB_URI` và quyền truy cập mạng tới DB.
-- Thêm hoặc sửa các biến môi trường trong `.env` theo nhu cầu triển khai.
+### Driver Status
+- `available` - Driver is available for assignment
+- `on_trip` - Driver is currently on a trip
+- `off` - Driver is off duty
 
-## API Reference
+### Order Status
+- `pending` - Order is waiting to be assigned
+- `assigned` - Order has been assigned to a trip
+- `done` - Order has been completed
 
-Base path: `/api` (tất cả routes dữ liệu yêu cầu authentication, ngoại trừ `/api/auth/*`).
+### Trip Status
+- `planned` - Trip is planned but not started
+- `running` - Trip is currently active
+- `completed` - Trip has been completed
 
-Authentication
-- `POST /api/auth/login` — body: `{ "username": string, "password": string }`.
- - `POST /api/auth/login` — body: `{ "email"?: string, "username"?: string, "password": string }`.
-	- Response: `{ "token": string, "user": { "username": string, "role": "admin" } }`.
-	- Mặc định `ADMIN_USERNAME` / `ADMIN_PASSWORD` (env) = `admin` / `admin123`.
-	- Sử dụng header `Authorization: Bearer <token>` cho các route được bảo vệ.
-	 - If `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set in `.env`, the server will create an initial admin user on first startup.
-	 - Sử dụng header `Authorization: Bearer <token>` cho các route được bảo vệ.
+## Project Structure
 
-CRUD resources
-Các resource sau hỗ trợ CRUD thông qua các endpoints tiêu chuẩn (định nghĩa trong `src/routes/createCrudRouter.js`):
-
-- `orders`, `vehicles`, `drivers`, `trips`, `tracking`, `inventory`, `costs`, `invoices`, `users`, `metrics`
-
-Với `<resource>` thay bằng một trong các resource trên:
-- `GET /api/<resource>` — trả về danh sách (Array).
-- `GET /api/<resource>/:id` — trả về một bản ghi (404 nếu không tồn tại).
-- `POST /api/<resource>` — tạo mới (201, trả về object vừa tạo).
-- `PUT /api/<resource>/:id` — cập nhật (trả về object đã cập nhật hoặc 404).
-- `DELETE /api/<resource>/:id` — xóa (204 no content hoặc 404).
-
-Route optimizer
-- `POST /api/route-optimizer/optimize` — chuyển tiếp body tới dịch vụ tối ưu hóa Python.
-	- Dịch vụ tối ưu hóa được cấu hình bằng `ROUTE_OPTIMIZER_URL` (mặc định `http://127.0.0.1:8000`).
-	- Response và status code trả về tương tự service tối ưu.
-
-Ví dụ nhanh
-- Login (curl):
-
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-	-H 'Content-Type: application/json' \
-	-d '{"username":"admin","password":"admin123"}'
+```
+src/
+├── config/
+│   └── database.js          # MongoDB connection configuration
+├── models/
+│   ├── Vehicle.js           # Vehicle schema
+│   ├── Driver.js            # Driver schema
+│   ├── Order.js             # Order schema
+│   └── Trip.js              # Trip schema
+├── controllers/
+│   ├── vehicleController.js # Vehicle CRUD logic
+│   ├── driverController.js  # Driver CRUD logic
+│   ├── orderController.js   # Order CRUD logic
+│   └── tripController.js    # Trip CRUD logic
+├── routes/
+│   ├── vehicleRoutes.js     # Vehicle endpoints
+│   ├── driverRoutes.js      # Driver endpoints
+│   ├── orderRoutes.js       # Order endpoints
+│   └── tripRoutes.js        # Trip endpoints
+└── index.js                 # Main server file
 ```
 
-- Lấy danh sách orders (cần token):
+## Error Handling
 
-```bash
-curl http://localhost:5000/api/orders \
-	-H 'Authorization: Bearer <token>'
+The API returns appropriate HTTP status codes:
+- `201 Created` - Successful creation
+- `200 OK` - Successful read/update
+- `400 Bad Request` - Invalid input or duplicate entry
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+Error responses include a message explaining the issue:
+```json
+{
+  "error": "Description of the error"
+}
 ```
 
-Lỗi phổ biến
-- Validation error: `400` với `{ message: 'Validation error', details }`.
-- Invalid id: `400` với `{ message: 'Invalid id format' }`.
-- Not found: `404` với `{ message: 'Not found' }`.
+## Database Relationships
 
----
+- **Vehicle - Trip**: One-to-Many (1 vehicle can have multiple trips)
+- **Driver - Trip**: One-to-Many (1 driver can have multiple trips)
+- **Order - Trip**: Many-to-One (Maximum 2 orders per trip)
 
-Nếu muốn, tôi có thể tạo thêm danh sách endpoint dạng Markdown chi tiết cho frontend hoặc xuất collection Postman/Insomnia.
+## Future Enhancements
+
+- JWT authentication
+- Input validation using Joi
+- Route optimization integration
+- Pagination for list endpoints
+- Filtering and sorting capabilities
+- Unit and integration tests
+- API documentation with Swagger
+
+## License
+
+ISC
+
+## Support
+
+For issues or questions, please create an issue in the project repository.
