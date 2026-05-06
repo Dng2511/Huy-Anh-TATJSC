@@ -94,8 +94,8 @@ const tripSchema = Joi.object({
     stopA: Joi.string().required().messages({
       'any.required': 'Route stopA is required',
     }),
-    stopB: Joi.string().required().messages({
-      'any.required': 'Route stopB is required',
+    stopB: Joi.string().optional().messages({
+      'string.base': 'Route stopB must be a string',
     }),
   })
     .required()

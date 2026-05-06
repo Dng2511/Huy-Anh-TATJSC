@@ -3,30 +3,40 @@ const Vehicle = require('../models/Vehicle');
 const Driver = require('../models/Driver');
 const Order = require('../models/Order');
 
+async function resolveDocumentId(Model, businessId) {
+  if (!businessId) {
+    return null;
+  }
+
+  const document = await Model.findOne({ id: businessId });
+  return document ? document._id : null;
+}
+
 // Create a new trip
 exports.createTrip = async (req, res) => {
   try {
     const { id, vehicleId, driverId, order1Id, order2Id, route, status, cost } = req.body;
 
     // Validate references
-    const vehicle = await Vehicle.findOne({ id: vehicleId });
-    if (!vehicle) {
+    const vehicleObjectId = await resolveDocumentId(Vehicle, vehicleId);
+    if (!vehicleObjectId) {
       return res.status(400).json({ error: 'Vehicle not found' });
     }
 
-    const driver = await Driver.findOne({ id: driverId });
-    if (!driver) {
+    const driverObjectId = await resolveDocumentId(Driver, driverId);
+    if (!driverObjectId) {
       return res.status(400).json({ error: 'Driver not found' });
     }
 
-    const order1 = await Order.findOne({ id: order1Id });
-    if (!order1) {
+    const order1ObjectId = await resolveDocumentId(Order, order1Id);
+    if (!order1ObjectId) {
       return res.status(400).json({ error: 'Order 1 not found' });
     }
 
+    let order2ObjectId = null;
     if (order2Id) {
-      const order2 = await Order.findOne({ id: order2Id });
-      if (!order2) {
+      order2ObjectId = await resolveDocumentId(Order, order2Id);
+      if (!order2ObjectId) {
         return res.status(400).json({ error: 'Order 2 not found' });
       }
     }
@@ -38,10 +48,10 @@ exports.createTrip = async (req, res) => {
 
     const trip = new Trip({
       id,
-      vehicleId,
-      driverId,
-      order1Id,
-      order2Id,
+      vehicleId: vehicleObjectId,
+      driverId: driverObjectId,
+      order1Id: order1ObjectId,
+      order2Id: order2ObjectId,
       route,
       status,
       cost,
@@ -57,7 +67,7 @@ exports.createTrip = async (req, res) => {
 // Get all trips
 exports.getAllTrips = async (req, res) => {
   try {
-    const trips = await Trip.find();
+    const trips = await Trip.find().populate('vehicleId driverId order1Id order2Id');
     res.status(200).json(trips);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -67,7 +77,7 @@ exports.getAllTrips = async (req, res) => {
 // Get a single trip by ID
 exports.getTripById = async (req, res) => {
   try {
-    const trip = await Trip.findOne({ id: req.params.id });
+    const trip = await Trip.findOne({ id: req.params.id }).populate('vehicleId driverId order1Id order2Id');
 
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
@@ -85,37 +95,55 @@ exports.updateTrip = async (req, res) => {
     const { id, vehicleId, driverId, order1Id, order2Id, route, status, cost } = req.body;
 
     // Validate references if they are being updated
+    let vehicleObjectId;
     if (vehicleId) {
-      const vehicle = await Vehicle.findOne({ id: vehicleId });
-      if (!vehicle) {
+      vehicleObjectId = await resolveDocumentId(Vehicle, vehicleId);
+      if (!vehicleObjectId) {
         return res.status(400).json({ error: 'Vehicle not found' });
       }
     }
 
+    let driverObjectId;
     if (driverId) {
-      const driver = await Driver.findOne({ id: driverId });
-      if (!driver) {
+      driverObjectId = await resolveDocumentId(Driver, driverId);
+      if (!driverObjectId) {
         return res.status(400).json({ error: 'Driver not found' });
       }
     }
 
+    let order1ObjectId;
     if (order1Id) {
-      const order1 = await Order.findOne({ id: order1Id });
-      if (!order1) {
+      order1ObjectId = await resolveDocumentId(Order, order1Id);
+      if (!order1ObjectId) {
         return res.status(400).json({ error: 'Order 1 not found' });
       }
     }
 
+    let order2ObjectId = null;
     if (order2Id) {
-      const order2 = await Order.findOne({ id: order2Id });
-      if (!order2) {
+      order2ObjectId = await resolveDocumentId(Order, order2Id);
+      if (!order2ObjectId) {
         return res.status(400).json({ error: 'Order 2 not found' });
       }
     }
 
+    const updatePayload = { id, route, status, cost };
+    if (vehicleObjectId) {
+      updatePayload.vehicleId = vehicleObjectId;
+    }
+    if (driverObjectId) {
+      updatePayload.driverId = driverObjectId;
+    }
+    if (order1ObjectId) {
+      updatePayload.order1Id = order1ObjectId;
+    }
+    if (order2Id !== undefined) {
+      updatePayload.order2Id = order2ObjectId;
+    }
+
     const trip = await Trip.findOneAndUpdate(
       { id: req.params.id },
-      { id, vehicleId, driverId, order1Id, order2Id, route, status, cost },
+      updatePayload,
       { new: true, runValidators: true }
     );
 
@@ -147,7 +175,10 @@ exports.deleteTrip = async (req, res) => {
 // Get trips by vehicle ID
 exports.getTripsByVehicle = async (req, res) => {
   try {
-    const trips = await Trip.find({ vehicleId: req.params.vehicleId });
+    const vehicleObjectId = await resolveDocumentId(Vehicle, req.params.vehicleId);
+    const trips = vehicleObjectId
+      ? await Trip.find({ vehicleId: vehicleObjectId }).populate('vehicleId driverId order1Id order2Id')
+      : [];
     res.status(200).json(trips);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -157,7 +188,10 @@ exports.getTripsByVehicle = async (req, res) => {
 // Get trips by driver ID
 exports.getTripsByDriver = async (req, res) => {
   try {
-    const trips = await Trip.find({ driverId: req.params.driverId });
+    const driverObjectId = await resolveDocumentId(Driver, req.params.driverId);
+    const trips = driverObjectId
+      ? await Trip.find({ driverId: driverObjectId }).populate('vehicleId driverId order1Id order2Id')
+      : [];
     res.status(200).json(trips);
   } catch (error) {
     res.status(500).json({ error: error.message });
