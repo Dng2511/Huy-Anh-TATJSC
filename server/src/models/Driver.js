@@ -2,12 +2,6 @@ const mongoose = require('mongoose');
 
 const driverSchema = new mongoose.Schema(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
     name: {
       type: String,
       required: true,

@@ -45,70 +45,23 @@ const driverSchema = Joi.object({
     .default('available'),
 });
 
-// Order validation schema
-const orderSchema = Joi.object({
-  id: Joi.string().required().messages({
-    'string.empty': 'Order ID cannot be empty',
-    'any.required': 'Order ID is required',
-  }),
-  type: Joi.string().valid('IN', 'OUT').required().messages({
-    'any.only': 'Order type must be either IN or OUT',
-    'any.required': 'Order type is required',
-  }),
-  location: Joi.string()
-    .valid('A', 'B')
-    .required()
-    .messages({
-      'any.only': 'Location must be either A or B',
-      'any.required': 'Location is required',
-    }),
-  status: Joi.string()
-    .valid('pending', 'assigned', 'done')
-    .default('pending'),
-  cost: Joi.number().required().min(0).messages({
-    'number.min': 'Cost must be a positive number',
-    'any.required': 'Cost is required',
-  }),
-});
 
-// Trip validation schema
-const tripSchema = Joi.object({
-  id: Joi.string().required().messages({
-    'string.empty': 'Trip ID cannot be empty',
-    'any.required': 'Trip ID is required',
+//Gate validation schema
+const gateSchema = Joi.object({
+  name: Joi.string().required().trim().messages({
+    'string.empty': 'Name cannot be empty',
+    'any.required': 'Name is required',
   }),
-  vehicleId: Joi.string().required().messages({
-    'string.empty': 'Vehicle ID cannot be empty',
-    'any.required': 'Vehicle ID is required',
-  }),
-  driverId: Joi.string().required().messages({
-    'string.empty': 'Driver ID cannot be empty',
-    'any.required': 'Driver ID is required',
-  }),
-  order1Id: Joi.string().required().messages({
-    'string.empty': 'Order 1 ID cannot be empty',
-    'any.required': 'Order 1 ID is required',
-  }),
-  order2Id: Joi.string().allow(null).optional(),
-  route: Joi.object({
-    stopA: Joi.string().required().messages({
-      'any.required': 'Route stopA is required',
+
+  locate: Joi.object({
+    lat: Joi.number().required().messages({
+      'any.required': 'Latitude is required',
     }),
-    stopB: Joi.string().optional().messages({
-      'string.base': 'Route stopB must be a string',
+
+    lng: Joi.number().required().messages({
+      'any.required': 'Longitude is required',
     }),
-  })
-    .required()
-    .messages({
-      'any.required': 'Route is required',
-    }),
-  status: Joi.string()
-    .valid('planned', 'running', 'completed')
-    .default('planned'),
-  cost: Joi.number().required().min(0).messages({
-    'number.min': 'Cost must be a positive number',
-    'any.required': 'Cost is required',
-  }),
+  }).optional(),
 });
 
 // Validation middleware factory
@@ -133,6 +86,5 @@ const validate = (schema) => (req, res, next) => {
 module.exports = {
   validateVehicle: validate(vehicleSchema),
   validateDriver: validate(driverSchema),
-  validateOrder: validate(orderSchema),
-  validateTrip: validate(tripSchema),
+  validateGate: validate(gateSchema),
 };

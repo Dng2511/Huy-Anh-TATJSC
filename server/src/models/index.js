@@ -2,6 +2,4 @@
 module.exports = {
   Vehicle: require('./Vehicle'),
   Driver: require('./Driver'),
-  Order: require('./Order'),
-  Trip: require('./Trip'),
 };

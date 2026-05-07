@@ -7,8 +7,7 @@ const connectDB = require('./config/database');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const driverRoutes = require('./routes/driverRoutes');
-const orderRoutes = require('./routes/orderRoutes');
-const tripRoutes = require('./routes/tripRoutes');
+// Order and Trip routes removed
 
 const app = express();
 
@@ -31,8 +30,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/drivers', driverRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/trips', tripRoutes);
+// Orders and trips routes removed
 
 // 404 handler
 app.use((req, res) => {
