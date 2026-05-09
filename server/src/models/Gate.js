@@ -10,6 +10,11 @@ const gateSchema = new mongoose.Schema(
         locate: {
             lat: Number,
             lng: Number,
+        },
+        location: {
+            type: String,
+            required: true,
+            trim: true,
         }
     },
     {

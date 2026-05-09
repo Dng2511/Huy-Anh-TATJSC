@@ -64,6 +64,62 @@ const gateSchema = Joi.object({
   }).optional(),
 });
 
+const rateSchema = Joi.object({
+    pickup: Joi.string().required().messages({
+        'any.required': 'Pickup gate is required',
+        'string.empty': 'Pickup gate cannot be empty',
+    }),
+
+    delivery: Joi.string().required().messages({
+        'any.required': 'Delivery gate is required',
+        'string.empty': 'Delivery gate cannot be empty',
+    }),
+
+    isReefer: Joi.boolean().default(false),
+
+    fixedCost: Joi.number().min(0).default(0),
+});
+
+const partnerSchema = Joi.object({
+    name: Joi.string().trim().required().messages({
+        'any.required': 'Partner name is required',
+        'string.empty': 'Partner name cannot be empty',
+    }),
+
+    contact: Joi.object({
+        phone: Joi.string().trim().required().messages({
+            'any.required': 'Phone is required',
+            'string.empty': 'Phone cannot be empty',
+        }),
+
+        email: Joi.string().trim().email().optional(),
+    }).required(),
+
+    rates: Joi.array()
+        .items(rateSchema)
+        .custom((rates, helpers) => {
+            const used = new Set();
+
+            for (const rate of rates) {
+                const key = `${rate.pickup}_${rate.delivery}_${rate.isReefer}`;
+
+                if (used.has(key)) {
+                    return helpers.error('any.duplicateRate');
+                }
+
+                used.add(key);
+            }
+
+            return rates;
+        })
+        .messages({
+            'any.duplicateRate':
+                'Duplicate rate with same pickup, delivery and reefer type',
+        }),
+});
+
+
+
 // Validation middleware factory
 const validate = (schema) => (req, res, next) => {
   const { error, value } = schema.validate(req.body, {
@@ -87,4 +143,5 @@ module.exports = {
   validateVehicle: validate(vehicleSchema),
   validateDriver: validate(driverSchema),
   validateGate: validate(gateSchema),
+  validatePartner: validate(partnerSchema),
 };

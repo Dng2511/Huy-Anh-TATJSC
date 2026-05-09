@@ -23,7 +23,7 @@ const rateSchema = new mongoose.Schema(
             type: Number,
             default: 0,
             min: 0,
-        },
+        }
     },
     {
         _id: false,
@@ -51,6 +51,11 @@ const partnerSchema = new mongoose.Schema(
             },
         },
         rates: [rateSchema],
+        waitingCost: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
     },
     {
         timestamps: true,

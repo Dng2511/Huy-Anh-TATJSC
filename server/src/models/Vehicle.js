@@ -9,6 +9,11 @@ const vehicleSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    driver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Driver',
+      required: false,
+    },
     fuelRate: {
       type: Number,
       required: true,

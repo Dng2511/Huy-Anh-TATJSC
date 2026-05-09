@@ -48,7 +48,12 @@ exports.getVehicleById = async (req, res) => {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
 
-    res.status(200).json(vehicle);
+    const orders = await Order.find({ vehicle: vehicle._id, status: { $in: ['running', 'planned'] } }).populate('pickup delivery');
+
+    const vehicleData = vehicle.toObject();
+    vehicleData.orders = orders;
+
+    res.status(200).json(vehicleData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -68,6 +73,7 @@ exports.updateVehicle = async (req, res) => {
     if (!vehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
+    
 
     res.status(200).json(vehicle);
   } catch (error) {
