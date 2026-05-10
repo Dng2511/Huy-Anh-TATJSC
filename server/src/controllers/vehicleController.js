@@ -73,7 +73,7 @@ exports.updateVehicle = async (req, res) => {
     if (!vehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
-    
+
 
     res.status(200).json(vehicle);
   } catch (error) {
@@ -82,16 +82,28 @@ exports.updateVehicle = async (req, res) => {
 };
 
 // Delete a vehicle
-exports.deleteVehicle = async (req, res) => {
+exports.deleteVehicles = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findOneAndDelete({ id: req.params.id });
+    const { ids } = req.body;
 
-    if (!vehicle) {
-      return res.status(404).json({ error: 'Vehicle not found' });
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({
+        error: 'ids must be an array'
+      });
     }
 
-    res.status(200).json({ message: 'Vehicle deleted successfully' });
+    const result = await Vehicle.deleteMany({
+      _id: { $in: ids }
+    });
+
+    res.status(200).json({
+      message: 'Vehicles deleted successfully',
+      deletedCount: result.deletedCount
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 };

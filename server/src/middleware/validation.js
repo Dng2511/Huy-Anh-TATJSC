@@ -2,10 +2,6 @@ const Joi = require('joi');
 
 // Vehicle validation schema
 const vehicleSchema = Joi.object({
-  id: Joi.string().required().messages({
-    'string.empty': 'Vehicle ID cannot be empty',
-    'any.required': 'Vehicle ID is required',
-  }),
   licensePlate: Joi.string().required().uppercase().messages({
     'string.empty': 'License plate cannot be empty',
     'any.required': 'License plate is required',
@@ -21,10 +17,6 @@ const vehicleSchema = Joi.object({
 
 // Driver validation schema
 const driverSchema = Joi.object({
-  id: Joi.string().required().messages({
-    'string.empty': 'Driver ID cannot be empty',
-    'any.required': 'Driver ID is required',
-  }),
   name: Joi.string().required().messages({
     'string.empty': 'Name cannot be empty',
     'any.required': 'Name is required',

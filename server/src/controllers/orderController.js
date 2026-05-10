@@ -62,7 +62,8 @@ exports.getAllOrders = async (req, res) => {
             .populate('driver', 'name')
             .populate('vehicle', 'licensePlate')
             .populate('pickup', 'name')
-            .populate('delivery', 'name');
+            .populate('delivery', 'name')
+            .sort({ createdAt: -1 });
 
         res.status(200).json(orders);
     } catch (error) {
@@ -141,17 +142,24 @@ exports.updateOrder = async (req, res) => {
     }
 };
 
-// Delete an order
-exports.deleteOrder = async (req, res) => {
+// Delete orders (multiple)
+exports.deleteOrders = async (req, res) => {
     try {
-        const order = await Order.findByIdAndDelete(req.params.id);
-        if (!order) {
-            return res.status(404).json({
-                error: 'Order not found'
+        const { ids } = req.body;
+
+        if (!ids || !Array.isArray(ids)) {
+            return res.status(400).json({
+                error: 'ids must be an array'
             });
         }
+
+        const result = await Order.deleteMany({
+            _id: { $in: ids }
+        });
+
         res.status(200).json({
-            message: 'Order deleted successfully'
+            message: 'Orders deleted successfully',
+            deletedCount: result.deletedCount
         });
     } catch (error) {
         res.status(400).json({

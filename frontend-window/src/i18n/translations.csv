@@ -128,3 +128,8 @@ users.column.access,Quyền truy cập,Access permission,アクセス権限,Acce
 users.column.action,Hành động,Actions,操作,Actions
 users.action.grant,Cấp quyền,Grant permission,権限付与,Grant permission
 users.action.lock,Khóa,Lock,ロック,Lock
+driverStatus.available,Sẵn sàng,Available,利用可能,可用
+driverStatus.on_trip,Đang chuyến,On trip,配送中,配送中
+driverStatus.off,Nghỉ,Offline,オフライン,离线
+drivers.addDriver,Thêm tài xế,Add driver,ドライバーを追加,添加司机
+drivers.deleteDriver,Xóa tài xế,Delete driver,ドライバーを削除,删除司机

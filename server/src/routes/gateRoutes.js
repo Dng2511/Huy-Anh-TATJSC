@@ -6,6 +6,6 @@ const { validateGate } = require('../middleware/validation');
 router.post('/', validateGate, gateController.createGate);
 router.get('/', gateController.getAllGates);
 router.put('/:id', validateGate, gateController.updateGate);
-router.delete('/:id', gateController.deleteGate);
+router.delete('/', gateController.deleteGates);
 
 module.exports = router;

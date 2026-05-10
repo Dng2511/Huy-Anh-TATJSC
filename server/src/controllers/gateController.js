@@ -73,20 +73,25 @@ exports.updateGate = async (req, res) => {
 };
 
 // DELETE
-exports.deleteGate = async (req, res) => {
+exports.deleteGates = async (req, res) => {
     try {
-        const gate = await Gate.findByIdAndDelete(req.params.id);
+        const { ids } = req.body;
 
-        if (!gate) {
-            return res.status(404).json({
+        if (!ids || !Array.isArray(ids)) {
+            return res.status(400).json({
                 success: false,
-                message: 'Gate not found',
+                message: 'ids must be an array',
             });
         }
 
+        const result = await Gate.deleteMany({
+            _id: { $in: ids }
+        });
+
         res.status(200).json({
             success: true,
-            message: 'Gate deleted successfully',
+            message: 'Gates deleted successfully',
+            deletedCount: result.deletedCount,
         });
     } catch (error) {
         res.status(500).json({

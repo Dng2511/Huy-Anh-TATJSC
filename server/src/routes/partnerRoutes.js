@@ -6,6 +6,6 @@ const { validatePartner } = require('../middleware/validation');
 router.post('/', validatePartner, partnerController.createPartner);
 router.get('/', partnerController.getAllPartners);
 router.put('/:id', validatePartner, partnerController.updatePartner);
-router.delete('/:id', partnerController.deletePartner);
+router.delete('/', partnerController.deletePartners);
 
 module.exports = router;
