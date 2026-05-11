@@ -3,6 +3,7 @@ import { ConfigProvider } from 'antd'
 import MainLayout from '../layout/MainLayout'
 import DashboardPage from '../pages/DashboardPage'
 import DriversPage from '../pages/DriversPage'
+import GatesPage from '../pages/GatesPage'
 import OrdersPage from '../pages/OrdersPage'
 import UsersPage from '../pages/UsersPage'
 import VehiclesPage from '../pages/VehiclesPage'
@@ -27,6 +28,12 @@ function AppView({ t, language }) {
       case 'drivers':
         return (
           <DriversPage
+            t={t}
+          />
+        )
+      case 'gates':
+        return (
+          <GatesPage
             t={t}
           />
         )
@@ -70,6 +77,10 @@ function AppView({ t, language }) {
       title: t('page.tracking.title', 'Tracking'),
       description: t('page.tracking.description', ''),
     },
+    gates: {
+      title: t('page.gates.title', 'Gates'),
+      description: t('page.gates.description', ''),
+    },
     warehouse: {
       title: t('page.warehouse.title', 'Warehouse'),
       description: t('page.warehouse.description', ''),
@@ -100,6 +111,7 @@ function AppView({ t, language }) {
       { key: 'drivers', label: t('menu.drivers', 'Drivers') },
       { key: 'trips', label: t('menu.trips', 'Trips') },
       { key: 'tracking', label: t('menu.tracking', 'Tracking') },
+      { key: 'gates', label: t('menu.gates', 'Gates') },
       { key: 'warehouse', label: t('menu.warehouse', 'Warehouse') },
       { key: 'costs', label: t('menu.costs', 'Costs') },
       { key: 'billing', label: t('menu.billing', 'Billing') },

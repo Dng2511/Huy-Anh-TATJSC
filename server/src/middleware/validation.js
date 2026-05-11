@@ -110,6 +110,41 @@ const partnerSchema = Joi.object({
         }),
 });
 
+// Order validation schema
+const orderSchema = Joi.object({
+    partner: Joi.string().optional().messages({
+        'string.empty': 'Partner cannot be empty',
+    }),
+
+    driver: Joi.string().optional().messages({
+        'string.empty': 'Driver cannot be empty',
+    }),
+
+    vehicle: Joi.string().optional().messages({
+        'string.empty': 'Vehicle cannot be empty',
+    }),
+
+    pickup: Joi.string().required().messages({
+        'any.required': 'Pickup gate is required',
+        'string.empty': 'Pickup gate cannot be empty',
+    }),
+
+    delivery: Joi.string().required().messages({
+        'any.required': 'Delivery gate is required',
+        'string.empty': 'Delivery gate cannot be empty',
+    }),
+
+    isReefer: Joi.boolean().default(false),
+
+    status: Joi.string()
+        .valid('pending', 'confirmed', 'in_progress', 'completed', 'cancelled')
+        .default('pending'),
+
+    cost: Joi.number().min(0).optional(),
+
+    waitingCost: Joi.number().min(0).optional(),
+});
+
 
 
 // Validation middleware factory
@@ -136,4 +171,5 @@ module.exports = {
   validateDriver: validate(driverSchema),
   validateGate: validate(gateSchema),
   validatePartner: validate(partnerSchema),
+  validateOrder: validate(orderSchema),
 };

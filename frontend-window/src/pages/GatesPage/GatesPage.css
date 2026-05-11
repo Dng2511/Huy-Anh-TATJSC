@@ -1,0 +1,57 @@
+.gates-page-card {
+  min-height: calc(100vh - 200px);
+}
+
+.gates-panel {
+  border: 1px solid rgba(15, 74, 70, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+  height: 100%;
+  padding: 14px;
+}
+
+.gates-section-title.ant-typography {
+  margin: 0 0 12px;
+}
+
+.gates-table-panel .ant-table-wrapper {
+  overflow: hidden;
+}
+
+.gates-table-panel .selected-row {
+  background-color: rgba(14, 107, 99, 0.08) !important;
+}
+
+.gates-map-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.gates-map {
+  width: 100%;
+  min-height: 600px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 74, 70, 0.2);
+  overflow: hidden;
+}
+
+.gates-empty-map {
+  min-height: 600px;
+  border-radius: 10px;
+  border: 1px dashed rgba(15, 74, 70, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gate-popup {
+  max-width: 240px;
+  line-height: 1.35;
+}
+
+@media (max-width: 992px) {
+  .gates-map,
+  .gates-empty-map {
+    min-height: 480px;
+  }
+}

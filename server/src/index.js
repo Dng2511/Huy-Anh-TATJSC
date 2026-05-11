@@ -7,7 +7,9 @@ const connectDB = require('./config/database');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const driverRoutes = require('./routes/driverRoutes');
-// Order and Trip routes removed
+const orderRoutes = require('./routes/orderRoutes');
+const gateRoutes = require('./routes/gateRoutes');
+const partnerRoutes = require('./routes/partnerRoutes');
 
 const app = express();
 
@@ -30,7 +32,9 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/drivers', driverRoutes);
-// Orders and trips routes removed
+app.use('/api/orders', orderRoutes);
+app.use('/api/gates', gateRoutes);
+app.use('/api/partners', partnerRoutes);
 
 // 404 handler
 app.use((req, res) => {
