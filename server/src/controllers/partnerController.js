@@ -69,26 +69,21 @@ exports.updatePartner = async (req, res) => {
     }
 };
 
-//Delete partners (multiple)
-exports.deletePartners = async (req, res) => {
+//Delete a partner
+exports.deletePartner = async (req, res) => {
     try {
-        const { ids } = req.body;
+        const partner = await Partner.findByIdAndDelete(req.params.id);
 
-        if (!ids || !Array.isArray(ids)) {
-            return res.status(400).json({
+        if (!partner) {
+            return res.status(404).json({
                 success: false,
-                message: 'ids must be an array',
+                message: 'Partner not found',
             });
         }
 
-        const result = await Partner.deleteMany({
-            _id: { $in: ids }
-        });
-
         res.status(200).json({
             success: true,
-            message: 'Partners deleted successfully',
-            deletedCount: result.deletedCount,
+            message: 'Partner deleted successfully',
         });
     } catch (error) {
         res.status(500).json({
@@ -97,6 +92,7 @@ exports.deletePartners = async (req, res) => {
         });
     }
 };
+
 
 exports.addDeliveryRate = async (req, res) => {
     try {
@@ -126,7 +122,23 @@ exports.addDeliveryRate = async (req, res) => {
 exports.removeDeliveryRate = async (req, res) => {
     try {
         const { partnerId } = req.params;
-        const { pickup, delivery, isReefer } = req.body;
+        // accept either an array of rates in the body or a single rate object
+        let ratesToRemove = [];
+        if (Array.isArray(req.body)) {
+            ratesToRemove = req.body;
+        } else if (Array.isArray(req.body.rates)) {
+            ratesToRemove = req.body.rates;
+        } else if (req.body && (req.body.pickup || req.body.delivery)) {
+            const { pickup, delivery, isReefer } = req.body;
+            ratesToRemove = [{ pickup, delivery, isReefer }];
+        }
+
+        if (!ratesToRemove.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'No rates provided to remove',
+            });
+        }
         const partner = await Partner.findById(partnerId);
         if (!partner) {
             return res.status(404).json({
@@ -134,8 +146,13 @@ exports.removeDeliveryRate = async (req, res) => {
                 message: 'Partner not found',
             });
         }
+        const removeSet = new Set(
+            ratesToRemove.map(r => `${r.pickup}_${r.delivery}_${!!r.isReefer}`)
+        );
+
         partner.rates = partner.rates.filter(rate => {
-            return !(rate.pickup.equals(pickup) && rate.delivery.equals(delivery) && rate.isReefer === isReefer);
+            const key = `${rate.pickup.toString()}_${rate.delivery.toString()}_${!!rate.isReefer}`;
+            return !removeSet.has(key);
         });
         await partner.save();
         res.status(200).json({

@@ -72,6 +72,11 @@ const rateSchema = Joi.object({
     fixedCost: Joi.number().min(0).default(0),
 });
 
+// Schema for removing multiple rates (array of rateSchema)
+const removeRatesSchema = Joi.array().items(rateSchema).min(1).messages({
+  'array.min': 'At least one rate must be provided to remove',
+});
+
 const partnerSchema = Joi.object({
     name: Joi.string().trim().required().messages({
         'any.required': 'Partner name is required',
@@ -171,5 +176,7 @@ module.exports = {
   validateDriver: validate(driverSchema),
   validateGate: validate(gateSchema),
   validatePartner: validate(partnerSchema),
+  validateRate: validate(rateSchema),
+  validateRemoveRates: validate(removeRatesSchema),
   validateOrder: validate(orderSchema),
 };
