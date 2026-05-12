@@ -4,14 +4,12 @@ const { Header, Content, Sider } = Layout
 const { Title, Text } = Typography
 
 function MainLayout({
-  t,
   activePage,
   setActivePage,
   pageMeta,
   menuItems,
   children,
 }) {
-  // Language switching removed — app is Vietnamese-only
 
   return (
     <Layout className="transport-layout">

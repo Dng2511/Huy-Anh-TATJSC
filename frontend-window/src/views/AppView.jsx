@@ -9,7 +9,7 @@ import UsersPage from '../pages/UsersPage'
 import VehiclesPage from '../pages/VehiclesPage'
 import PartnersPage from '../pages/PartnersPage'
 
-function AppView({ t, language }) {
+function AppView() {
   const [activePage, setActivePage] = useState('dashboard')
   const [hasPartnersUnsavedChanges, setHasPartnersUnsavedChanges] = useState(false)
 
@@ -44,38 +44,32 @@ function AppView({ t, language }) {
       // case 'orders':
       //   return (
       //     <OrdersPage
-      //       t={t}
       //     />
       //   )
       // case 'vehicles':
       //   return (
       //     <VehiclesPage
-      //       t={t}
       //     />
       //   )
       case 'drivers':
         return (
           <DriversPage
-            t={t}
           />
         )
       case 'gates':
         return (
           <GatesPage
-            t={t}
           />
         )
       case 'partners':
         return (
           <PartnersPage
-            t={t}
             onDirtyChange={setHasPartnersUnsavedChanges}
           />
         )
       default:
         return (
           <DashboardPage
-            t={t}
             metrics={metrics}
             trackingVehicles={trackingVehicles}
             menuItems={menuItems}
@@ -129,7 +123,7 @@ function AppView({ t, language }) {
       title: 'Người dùng',
       description: '',
     },
-  }), [t])
+  }), [])
 
   const menuItems = useMemo(
     () => [
@@ -181,8 +175,6 @@ function AppView({ t, language }) {
       }}
     >
       <MainLayout
-        t={t}
-        language={language}
         activePage={activePage}
         setActivePage={requestPageChange}
         pageMeta={pageMeta}

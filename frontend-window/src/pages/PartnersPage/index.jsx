@@ -44,7 +44,7 @@ const buildComparablePartner = (partner) => ({
   rates: (partner?.rates || []).map(normalizeRate),
 })
 
-function PartnersPage({ t, onDirtyChange }) {
+function PartnersPage({ onDirtyChange }) {
   const [gates, setGates] = useState([])
   const [originalPartners, setOriginalPartners] = useState([])
   const [draftPartners, setDraftPartners] = useState([])
