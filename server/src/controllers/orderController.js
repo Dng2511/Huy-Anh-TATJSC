@@ -59,19 +59,172 @@ exports.getAllOrders = async (req, res) => {
         if (req.query.driver) {
             filters.driver = req.query.driver;
         }
+        if (req.query.status) {
+            filters.status = req.query.status;
+        }
+
+        const statusOrder = [
+            'planned',
+            'running',
+            'waiting',
+            'delivering',
+            'completed',
+            'cancelled',
+        ];
 
         const [orders, totalItems] = await Promise.all([
-            Order.find(filters)
-                .populate('partner', 'name')
-                .populate('driver', 'name')
-                .populate('vehicle', 'licensePlate')
-                .populate('pickup', 'name')
-                .populate('delivery', 'name')
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit),
-            Order.countDocuments(filters)
+            Order.aggregate([
+                {
+                    $match: filters,
+                },
+
+                {
+                    $addFields: {
+                        statusOrder: {
+                            $indexOfArray: [statusOrder, '$status'],
+                        },
+                    },
+                },
+
+                {
+                    $sort: {
+                        statusOrder: 1,
+                        createdAt: -1,
+                    },
+                },
+
+                {
+                    $skip: skip,
+                },
+
+                {
+                    $limit: limit,
+                },
+
+                // partner
+                {
+                    $lookup: {
+                        from: 'partners',
+                        localField: 'partner',
+                        foreignField: '_id',
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1,
+                                },
+                            },
+                        ],
+                        as: 'partner',
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$partner',
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+
+                // driver
+                {
+                    $lookup: {
+                        from: 'drivers',
+                        localField: 'driver',
+                        foreignField: '_id',
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1,
+                                },
+                            },
+                        ],
+                        as: 'driver',
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$driver',
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+
+                // vehicle
+                {
+                    $lookup: {
+                        from: 'vehicles',
+                        localField: 'vehicle',
+                        foreignField: '_id',
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    licensePlate: 1,
+                                },
+                            },
+                        ],
+                        as: 'vehicle',
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$vehicle',
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+
+                // pickup
+                {
+                    $lookup: {
+                        from: 'gates',
+                        localField: 'pickup',
+                        foreignField: '_id',
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1,
+                                },
+                            },
+                        ],
+                        as: 'pickup',
+                    },
+                },
+                {
+                    $unwind: '$pickup',
+                },
+
+                // delivery
+                {
+                    $lookup: {
+                        from: 'gates',
+                        localField: 'delivery',
+                        foreignField: '_id',
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1,
+                                },
+                            },
+                        ],
+                        as: 'delivery',
+                    },
+                },
+                {
+                    $unwind: '$delivery',
+                },
+
+                {
+                    $project: {
+                        statusOrder: 0,
+                    },
+                },
+            ]),
+
+            Order.countDocuments(filters),
         ]);
+
 
         res.status(200).json({
             items: orders,
@@ -125,32 +278,48 @@ exports.updateOrder = async (req, res) => {
             cost,
             waitingCost
         } = req.body;
-        const order = await Order.findByIdAndUpdate(
-            req.params.id, {
-                partner,
-                driver,
-                vehicle,
-                pickup,
-                delivery,
-                isReefer,
-                status,
-                cost,
-                waitingCost
-            }, {
-                new: true,
-                runValidators: true
-            }
-        ).populate('partner', 'name')
-            .populate('driver', 'name')
-            .populate('vehicle', 'licensePlate')
-            .populate('pickup', 'name')
-            .populate('delivery', 'name');
+        const order = await Order.findById(req.params.id);
         if (!order) {
             return res.status(404).json({
                 error: 'Order not found'
             });
         }
-        res.status(200).json(order);
+
+        const previousStatus = order.status;
+        const newStatus = status !== undefined ? status : previousStatus;
+
+        order.partner = partner === undefined ? order.partner : partner;
+        order.driver = driver === undefined ? order.driver : driver;
+        order.vehicle = vehicle === undefined ? order.vehicle : vehicle;
+        order.pickup = pickup === undefined ? order.pickup : pickup;
+        order.delivery = delivery === undefined ? order.delivery : delivery;
+        order.isReefer = isReefer === undefined ? order.isReefer : isReefer;
+        order.status = newStatus;
+        order.cost = cost === undefined ? order.cost : cost;
+        order.waitingCost = waitingCost === undefined ? order.waitingCost : waitingCost;
+
+        // If changing from non-waiting -> waiting: set waitingStart to today
+        if (previousStatus !== 'waiting' && newStatus === 'waiting') {
+            order.waitingStart = new Date();
+            // clear waitingEnd when entering waiting again
+            order.waitingEnd = undefined;
+        }
+
+        // If changing from waiting -> non-waiting: set waitingEnd to today
+        if (previousStatus === 'waiting' && newStatus !== 'waiting') {
+            order.waitingEnd = new Date();
+        }
+
+        await order.save();
+
+        const populated = await Order.findById(order._id)
+            .populate('partner', 'name')
+            .populate('driver', 'name')
+            .populate('vehicle', 'licensePlate')
+            .populate('pickup', 'name')
+            .populate('delivery', 'name');
+
+        res.status(200).json(populated);
     } catch (error) {
         res.status(400).json({
             error: error.message
