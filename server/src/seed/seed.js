@@ -105,6 +105,12 @@ async function seed() {
 
     const gates = await Gate.insertMany(gatesData);
 
+    const gateMap = {};
+
+    gates.forEach((gate) => {
+      gateMap[gate.name] = gate._id;
+    });
+
     // Create partners
     const partners = [
       {
@@ -117,88 +123,88 @@ async function seed() {
         rates: [
           // THAKHEK -> CHALO
           {
-            pickup: '6a0297bd01c60058aeb8ab21', // Thakhek
-            delivery: '6a0297bd01c60058aeb8ab20', // Chalo
+            pickup: gateMap['Thakhek, Lào'],
+            delivery: gateMap['Cửa khẩu Quốc tế Cha lo'],
             isReefer: true,
             fixedCost: 13000000,
           },
 
           // THAKHEK -> HỮU NGHỊ
           {
-            pickup: '6a0297bd01c60058aeb8ab21',
-            delivery: '6a0297bd01c60058aeb8ab1a',
+            pickup: gateMap['Thakhek, Lào'],
+            delivery: gateMap['Cửa khẩu Hữu Nghị'],
             isReefer: true,
             fixedCost: 61000000,
           },
 
           // CHALO -> HỮU NGHỊ
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1a',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Hữu Nghị'],
             isReefer: true,
             fixedCost: 51000000,
           },
 
           // THAKHEK -> MÓNG CÁI
           {
-            pickup: '6a0297bd01c60058aeb8ab21',
-            delivery: '6a0297bd01c60058aeb8ab1b',
+            pickup: gateMap['Thakhek, Lào'],
+            delivery: gateMap['Cửa khẩu Móng Cái'],
             isReefer: true,
             fixedCost: 64000000,
           },
 
           // CHALO -> MÓNG CÁI
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1b',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Móng Cái'],
             isReefer: true,
             fixedCost: 54000000,
           },
 
           // THAKHEK -> HÀ KHẨU (LÀO CAI)
           {
-            pickup: '6a0297bd01c60058aeb8ab21',
-            delivery: '6a0297bd01c60058aeb8ab1c',
+            pickup: gateMap['Thakhek, Lào'],
+            delivery: gateMap['Cửa khẩu Quốc tế Lào Cai'],
             isReefer: true,
             fixedCost: 65000000,
           },
 
           // CHALO -> HÀ KHẨU (LÀO CAI)
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1c',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Quốc tế Lào Cai'],
             isReefer: true,
             fixedCost: 55000000,
           },
 
           // THAKHEK -> TRÀ LĨNH
           {
-            pickup: '6a0297bd01c60058aeb8ab21',
-            delivery: '6a0297bd01c60058aeb8ab1d',
+            pickup: gateMap['Thakhek, Lào'],
+            delivery: gateMap['Cửa khẩu Trà Lĩnh'],
             isReefer: true,
             fixedCost: 68000000,
           },
 
           // CHALO -> TRÀ LĨNH
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1d',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Trà Lĩnh'],
             isReefer: true,
             fixedCost: 58000000,
           },
 
           // THAKHEK -> GA ĐỒNG ĐĂNG
           {
-            pickup: '6a0297bd01c60058aeb8ab21',
-            delivery: '6a0297bd01c60058aeb8ab1f',
+            pickup: gateMap['Thakhek, Lào'],
+            delivery: gateMap['Ga Đồng Đăng'],
             isReefer: true,
             fixedCost: 51000000,
           },
 
           // CHALO -> GA ĐỒNG ĐĂNG
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1f',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Ga Đồng Đăng'],
             isReefer: true,
             fixedCost: 41000000,
           },
@@ -214,32 +220,32 @@ async function seed() {
         waitingCost: 1000000,
         rates: [
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1a',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Hữu Nghị'],
             isReefer: true,
             fixedCost: 52000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1b',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Móng Cái'],
             isReefer: true,
             fixedCost: 55000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1c',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Quốc tế Lào Cai'],
             isReefer: true,
             fixedCost: 56000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1e',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Quốc Tế Thanh Thủy'],
             isReefer: true,
             fixedCost: 57000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1d',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Trà Lĩnh'],
             isReefer: true,
             fixedCost: 58000000,
           },
@@ -255,32 +261,32 @@ async function seed() {
         waitingCost: 1000000,
         rates: [
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1a',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Hữu Nghị'],
             isReefer: true,
             fixedCost: 46000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1b',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Móng Cái'],
             isReefer: true,
             fixedCost: 49000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1c',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Quốc tế Lào Cai'],
             isReefer: true,
             fixedCost: 50000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1e',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Quốc Tế Thanh Thủy'],
             isReefer: true,
             fixedCost: 51000000,
           },
           {
-            pickup: '6a0297bd01c60058aeb8ab20',
-            delivery: '6a0297bd01c60058aeb8ab1d',
+            pickup: gateMap['Cửa khẩu Quốc tế Cha lo'],
+            delivery: gateMap['Cửa khẩu Trà Lĩnh'],
             isReefer: true,
             fixedCost: 51000000,
           },
