@@ -49,6 +49,9 @@ exports.createOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const filters = {};
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+        const skip = (page - 1) * limit;
 
         if (req.query.partner) {
             filters.partner = req.query.partner;
@@ -57,15 +60,28 @@ exports.getAllOrders = async (req, res) => {
             filters.driver = req.query.driver;
         }
 
-        const orders = await Order.find(filters)
-            .populate('partner', 'name')
-            .populate('driver', 'name')
-            .populate('vehicle', 'licensePlate')
-            .populate('pickup', 'name')
-            .populate('delivery', 'name')
-            .sort({ createdAt: -1 });
+        const [orders, totalItems] = await Promise.all([
+            Order.find(filters)
+                .populate('partner', 'name')
+                .populate('driver', 'name')
+                .populate('vehicle', 'licensePlate')
+                .populate('pickup', 'name')
+                .populate('delivery', 'name')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Order.countDocuments(filters)
+        ]);
 
-        res.status(200).json(orders);
+        res.status(200).json({
+            items: orders,
+            pagination: {
+                totalItems,
+                totalPages: Math.ceil(totalItems / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        });
     } catch (error) {
         res.status(400).json({
             error: error.message
