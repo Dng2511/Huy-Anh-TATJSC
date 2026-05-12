@@ -14,7 +14,7 @@ const { Text, Title } = Typography
 const DEFAULT_CENTER = [21.0, 105.5]
 const DEFAULT_ZOOM = 6
 
-function GatesPage({ t }) {
+function GatesPage() {
   const [gates, setGates] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedGate, setSelectedGate] = useState(null)
