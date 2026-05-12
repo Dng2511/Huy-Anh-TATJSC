@@ -3,7 +3,7 @@ import React from 'react'
 import driverApi from '../../services/Api/driverApi'
 import useInlineRowEdit from '../../hooks/useInlineRowEdit'
 
-function DriversPage({ t }) {
+function DriversPage() {
   const [drivers, setDrivers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedRowKeys, setSelectedRowKeys] = React.useState([]);
@@ -57,7 +57,7 @@ function DriversPage({ t }) {
     } catch (error) {
       if (error?.errorFields) return;
       console.error('Error creating driver:', error);
-      alert(t('drivers.createError', 'Lỗi khi thêm tài xế'));
+      alert('Lỗi khi thêm tài xế');
     } finally {
       setCreatingDriver(false);
     }
@@ -84,23 +84,23 @@ function DriversPage({ t }) {
         await fetchDrivers();
       } catch (error) {
         console.error('Error saving driver:', error);
-        alert(t('drivers.saveError', 'Lỗi khi lưu tài xế'));
+        alert('Lỗi khi lưu tài xế');
         throw error;
       } finally {
         setLoading(false);
       }
     },
-    confirmSaveOutside: () => window.confirm(t('drivers.confirmSaveOutside', 'Bạn có muốn lưu thay đổi trước khi thoát?')),
-    confirmSaveShortcut: () => window.confirm(t('drivers.confirmSaveShortcut', 'Bạn có muốn lưu các thay đổi?')),
+    confirmSaveOutside: () => window.confirm('Bạn có muốn lưu thay đổi trước khi thoát?'),
+    confirmSaveShortcut: () => window.confirm('Bạn có muốn lưu các thay đổi?'),
   });
 
   const handleDeleteDrivers = async () => {
     if (selectedRowKeys.length === 0) {
-      alert(t('drivers.selectDriversFirst', 'Vui lòng chọn tài xế cần xóa'));
+      alert('Vui lòng chọn tài xế cần xóa');
       return;
     }
 
-    if (window.confirm(t('drivers.confirmDelete', 'Bạn có chắc chắn muốn xóa những tài xế này?'))) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa những tài xế này?')) {
       try {
         setLoading(true);
         await driverApi.deleteDrivers(selectedRowKeys);
@@ -108,7 +108,7 @@ function DriversPage({ t }) {
         await fetchDrivers();
       } catch (error) {
         console.error('Error deleting drivers:', error);
-        alert(t('drivers.deleteError', 'Lỗi khi xóa tài xế'));
+        alert('Lỗi khi xóa tài xế');
       }
     }
   };
@@ -139,7 +139,7 @@ function DriversPage({ t }) {
       }
     } catch (error) {
       console.error('Error updating driver status:', error);
-      alert(t('drivers.saveError', 'Lỗi khi lưu tài xế'));
+      alert('Lỗi khi lưu tài xế');
       setDrivers((prev) =>
         prev.map((driver) =>
           driver._id === record._id ? { ...driver, status: previousStatus } : driver
@@ -161,12 +161,12 @@ function DriversPage({ t }) {
   return (
     <Card className="module-card">
       <Flex justify="space-between" align="center" wrap="wrap" gap={12} style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>{t('drivers.title', 'Danh sach tai xe')}</h2>
+        <h2 style={{ margin: 0 }}>{'Danh sách tài xế'}</h2>
         <Button 
           type="primary" 
           onClick={handleAddDriver}
         >
-          {t('drivers.addDriver', 'Them tai xe')}
+          {'Thêm tài xế'}
         </Button>
       </Flex>
       <div ref={containerRef}>
@@ -182,7 +182,7 @@ function DriversPage({ t }) {
         })}
         columns={[
           {
-            title: t('drivers.column.name'),
+            title: 'Tên',
             dataIndex: 'name',
             render: (text, record) => (
               editingRowId === record._id
@@ -191,7 +191,7 @@ function DriversPage({ t }) {
             ),
           },
           {
-            title: t('drivers.column.license'),
+            title: 'Bằng lái',
             dataIndex: 'licenseNumber',
             render: (text, record) => (
               editingRowId === record._id
@@ -200,7 +200,7 @@ function DriversPage({ t }) {
             ),
           },
           {
-            title: t('drivers.column.phone'),
+            title: 'Số điện thoại',
             dataIndex: 'phone',
             render: (text, record) => (
               editingRowId === record._id
@@ -209,14 +209,14 @@ function DriversPage({ t }) {
             ),
           },
           {
-            title: t('common.status'),
+            title: 'Trạng thái',
             dataIndex: 'status',
             render: (status, record) => (
               <Select
                 value={editingRowId === record._id ? editedRowData.status : status}
                 onChange={(value) => handleQuickStatusChange(record, value)}
                 style={{ width: 140 }}
-                options={Object.keys(driverStatusColor).map((key) => ({ value: key, label: t(`driverStatus.${key}`, key) }))}
+                options={Object.keys(driverStatusColor).map((key) => ({ value: key, label: key === 'available' ? 'Sẵn sàng' : key === 'on_trip' ? 'Đang chuyến' : key === 'off' ? 'Nghỉ' : key }))}
               />
             ),
           },
@@ -228,54 +228,54 @@ function DriversPage({ t }) {
           disabled={selectedRowKeys.length === 0}
           onClick={handleDeleteDrivers}
         >
-          {t('drivers.deleteDriver', 'Xoa tai xe')} ({selectedRowKeys.length})
+          {'Xóa tài xế'} ({selectedRowKeys.length})
         </Button>
       </Flex>
       </div>
       <Modal
-        title={t('drivers.addDriver', 'Them tai xe')}
+        title={'Thêm tài xế'}
         open={isAddModalOpen}
         onOk={handleCreateDriver}
         onCancel={handleCloseAddModal}
-        okText={t('common.save', 'Luu')}
-        cancelText={t('common.cancel', 'Huy')}
+        okText={'Lưu'}
+        cancelText={'Hủy'}
         confirmLoading={creatingDriver}
         destroyOnHidden
       >
         <Form form={addForm} layout="vertical">
           <Form.Item
-            label={t('drivers.column.name', 'Ten')}
+            label={'Tên'}
             name="name"
-            rules={[{ required: true, message: t('drivers.validation.nameRequired', 'Vui lòng nhập tên tài xế') }]}
+            rules={[{ required: true, message: 'Vui lòng nhập tên tài xế' }]}
           >
             <Input />
           </Form.Item>
 
           <Form.Item
-            label={t('drivers.column.license', 'Bang lai')}
+            label={'Bằng lái'}
             name="licenseNumber"
-            rules={[{ required: true, message: t('drivers.validation.licenseRequired', 'Vui lòng nhập số bằng lái') }]}
+            rules={[{ required: true, message: 'Vui lòng nhập số bằng lái' }]}
           >
             <Input />
           </Form.Item>
 
           <Form.Item
-            label={t('drivers.column.phone', 'So dien thoai')}
+            label={'Số điện thoại'}
             name="phone"
-            rules={[{ required: true, message: t('drivers.validation.phoneRequired', 'Vui lòng nhập số điện thoại') }]}
+            rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
           >
             <Input />
           </Form.Item>
 
           <Form.Item
-            label={t('common.status', 'Trang thai')}
+            label={'Trạng thái'}
             name="status"
-            rules={[{ required: true, message: t('drivers.validation.statusRequired', 'Vui lòng chọn trạng thái') }]}
+            rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
           >
             <Select
               options={Object.keys(driverStatusColor).map((key) => ({
                 value: key,
-                label: t(`driverStatus.${key}`, key),
+                label: key === 'available' ? 'Sẵn sàng' : key === 'on_trip' ? 'Đang chuyến' : key === 'off' ? 'Nghỉ' : key,
               }))}
             />
           </Form.Item>

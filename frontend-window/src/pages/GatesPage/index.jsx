@@ -1,19 +1,26 @@
-import { Card, Col, Empty, Row, Table, Typography } from 'antd'
+import { Button, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet'
 import gateApi from '../../services/Api/gateApi'
+import AddGateModal from './AddGateModal'
 import 'leaflet/dist/leaflet.css'
 import './GatesPage.css'
 
 const { Text, Title } = Typography
 
-const DEFAULT_CENTER = [10.7769, 106.7009]
+// Center roughly over Northern Vietnam (show Hanoi and surrounding region)
+const DEFAULT_CENTER = [21.0, 105.5]
+const DEFAULT_ZOOM = 6
 
 function GatesPage({ t }) {
   const [gates, setGates] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedGate, setSelectedGate] = useState(null)
   const markerRefs = useRef({})
+  const mapRef = useRef(null)
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const fetchGates = async () => {
@@ -53,14 +60,69 @@ function GatesPage({ t }) {
     return [totals.lat / validCoordinates.length, totals.lng / validCoordinates.length]
   }, [gates])
 
+  // Keep map view sensible: when gates change, fit bounds to markers; otherwise show northern VN
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const validCoordinates = gates
+      .map((g) => ({ lat: Number(g?.locate?.lat), lng: Number(g?.locate?.lng) }))
+      .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng))
+
+    if (!validCoordinates.length) {
+      mapRef.current.setView(DEFAULT_CENTER, DEFAULT_ZOOM)
+      return
+    }
+
+    if (validCoordinates.length === 1) {
+      mapRef.current.setView([validCoordinates[0].lat, validCoordinates[0].lng], 12)
+      return
+    }
+
+    const latlngs = validCoordinates.map((c) => [c.lat, c.lng])
+    mapRef.current.fitBounds(latlngs, { padding: [50, 50] })
+  }, [gates])
+
+  // Handle add gate modal
+  const handleOpenAddModal = () => {
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+  }
+
+  const handleAddGate = async (gateData) => {
+    setSubmitting(true)
+    try {
+      await gateApi.createGate(gateData)
+      message.success('Thêm cửa khẩu thành công')
+      handleCloseModal()
+
+      // Refresh gates list
+      const response = await gateApi.getGates()
+      const gateList = Array.isArray(response) ? response : response?.data || []
+      setGates(gateList)
+    } catch (error) {
+      console.error('Error creating gate:', error)
+      message.error('Lỗi khi thêm cửa khẩu')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <Card className="module-card gates-page-card">
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
           <div className="gates-panel gates-table-panel">
-            <Title level={4} className="gates-section-title">
-              {t('gates.tableTitle', 'Danh sach cua khau')}
-            </Title>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <Title level={4} className="gates-section-title" style={{ margin: 0 }}>
+                {'Danh sách cửa khẩu'}
+              </Title>
+              <Button type="primary" onClick={handleOpenAddModal}>
+                + Thêm cửa khẩu
+              </Button>
+            </div>
             <Table
               rowKey="_id"
               dataSource={gates}
@@ -81,11 +143,11 @@ function GatesPage({ t }) {
               })}
               columns={[
                 {
-                  title: t('gates.column.name', 'Ten cua khau'),
+                  title: 'Tên cửa khẩu',
                   dataIndex: 'name',
                 },
                 {
-                  title: t('gates.column.location', 'Location'),
+                  title: 'Vị trí',
                   dataIndex: 'location',
                 },
               ]}
@@ -96,12 +158,13 @@ function GatesPage({ t }) {
         <Col xs={24} lg={12}>
           <div className="gates-panel gates-map-panel">
             <Title level={4} className="gates-section-title">
-              {t('gates.mapTitle', 'Ban do vi tri cua khau')}
+              {'Bản đồ vị trí cửa khẩu'}
             </Title>
             {gates.length ? (
               <MapContainer
                 center={mapCenter}
-                zoom={9}
+                zoom={DEFAULT_ZOOM}
+                whenCreated={(map) => (mapRef.current = map)}
                 scrollWheelZoom
                 className="gates-map"
               >
@@ -148,12 +211,22 @@ function GatesPage({ t }) {
               </MapContainer>
             ) : (
               <div className="gates-empty-map">
-                <Empty description={t('gates.emptyMap', 'Khong co du lieu vi tri cua khau')} />
+                <Empty description={'Không có dữ liệu vị trí cửa khẩu'} />
               </div>
             )}
           </div>
         </Col>
       </Row>
+
+      <AddGateModal
+        open={isModalOpen}
+        onCancel={handleCloseModal}
+        onCreate={handleAddGate}
+        submitting={submitting}
+        gates={gates}
+        defaultCenter={DEFAULT_CENTER}
+        defaultZoom={DEFAULT_ZOOM}
+      />
     </Card>
   )
 }

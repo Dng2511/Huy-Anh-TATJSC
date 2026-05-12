@@ -54,6 +54,11 @@ const gateSchema = Joi.object({
       'any.required': 'Longitude is required',
     }),
   }).optional(),
+
+  location: Joi.string().required().trim().messages({
+    'string.empty': 'Location cannot be empty',
+    'any.required': 'Location is required',
+  }),
 });
 
 const rateSchema = Joi.object({

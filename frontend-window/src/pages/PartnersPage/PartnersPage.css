@@ -1,0 +1,106 @@
+.partner-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* Ensure the Collapse header and icon are vertically aligned */
+.ant-collapse-item .ant-collapse-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  position: relative;
+}
+
+/* Let the header be a flex container and keep the icon in normal flow
+   so it vertically centers with the label. Avoid absolute offsets. */
+.ant-collapse-header .ant-collapse-expand-icon,
+.ant-collapse-header .ant-collapse-arrow {
+  position: static !important;
+  top: auto !important;
+  transform: none !important;
+  margin-right: 8px;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.partner-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #262626;
+}
+
+.partner-details {
+  padding: 16px;
+}
+
+.contact-section {
+  margin-bottom: 16px;
+}
+
+.contact-card {
+  background-color: #fafafa;
+  border-radius: 4px;
+}
+
+.rates-section {
+  margin-top: 24px;
+}
+
+.partner-unsaved-pill {
+  background: #fffbe6;
+  color: #ad6800;
+  border: 1px solid #ffe58f;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0 10px;
+}
+
+.unsaved-section {
+  background: #fffbe6;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.unsaved-field {
+  background: #fff1b8;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.unsaved-input {
+  background: #fffbe6;
+  border-color: #ffd666;
+}
+
+.ant-input-number.unsaved-input {
+  background: #fffbe6;
+  border-color: #ffd666;
+}
+
+.ant-input-number.unsaved-input .ant-input-number-input {
+  background: #fffbe6;
+}
+
+.unsaved-input:hover,
+.unsaved-input:focus,
+.unsaved-input.ant-input-focused,
+.ant-input-number.unsaved-input:hover,
+.ant-input-number.unsaved-input:focus,
+.ant-input-number.unsaved-input.ant-input-number-focused {
+  border-color: #ffc53d;
+  box-shadow: 0 0 0 2px rgba(255, 197, 61, 0.2);
+}
+
+.new-rate-row td {
+  background: #fffbe6 !important;
+}
+
+.partner-tab-header:hover .partner-name {
+  color: #1890ff;
+}

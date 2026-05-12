@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, Modal } from 'antd'
 import MainLayout from '../layout/MainLayout'
 import DashboardPage from '../pages/DashboardPage'
 import DriversPage from '../pages/DriversPage'
@@ -7,9 +7,34 @@ import GatesPage from '../pages/GatesPage'
 import OrdersPage from '../pages/OrdersPage'
 import UsersPage from '../pages/UsersPage'
 import VehiclesPage from '../pages/VehiclesPage'
+import PartnersPage from '../pages/PartnersPage'
 
 function AppView({ t, language }) {
   const [activePage, setActivePage] = useState('dashboard')
+  const [hasPartnersUnsavedChanges, setHasPartnersUnsavedChanges] = useState(false)
+
+  const requestPageChange = (nextPage) => {
+    if (nextPage === activePage) {
+      return
+    }
+
+    if (activePage === 'partners' && hasPartnersUnsavedChanges) {
+      Modal.confirm({
+        title: 'Bạn có thay đổi chưa lưu',
+        content: 'Rời trang sẽ mất các thay đổi chưa lưu. Bạn có muốn tiếp tục?',
+        okText: 'Rời trang',
+        cancelText: 'Hủy',
+        okButtonProps: { danger: true },
+        onOk: () => {
+          setHasPartnersUnsavedChanges(false)
+          setActivePage(nextPage)
+        },
+      })
+      return
+    }
+
+    setActivePage(nextPage)
+  }
 
   const renderPageContent = () => {
     switch (activePage) {
@@ -37,6 +62,13 @@ function AppView({ t, language }) {
             t={t}
           />
         )
+      case 'partners':
+        return (
+          <PartnersPage
+            t={t}
+            onDirtyChange={setHasPartnersUnsavedChanges}
+          />
+        )
       default:
         return (
           <DashboardPage
@@ -46,7 +78,7 @@ function AppView({ t, language }) {
             menuItems={menuItems}
             pageMeta={pageMeta}
             formatCurrency={formatCurrency}
-            onNavigate={(key) => setActivePage(key)}
+            onNavigate={(key) => requestPageChange(key)}
           />
         )
     }
@@ -54,71 +86,62 @@ function AppView({ t, language }) {
 
   const pageMeta = useMemo(() => ({
     dashboard: {
-      title: t('page.dashboard.title', 'Dashboard'),
-      description: t('page.dashboard.description', ''),
+      title: 'Bảng điều khiển',
+      description: '',
     },
     orders: {
-      title: t('page.orders.title', 'Orders'),
-      description: t('page.orders.description', ''),
+      title: 'Đơn hàng',
+      description: '',
     },
     vehicles: {
-      title: t('page.vehicles.title', 'Vehicles'),
-      description: t('page.vehicles.description', ''),
+      title: 'Phương tiện',
+      description: '',
     },
     drivers: {
-      title: t('page.drivers.title', 'Drivers'),
-      description: t('page.drivers.description', ''),
+      title: 'Tài xế',
+      description: '',
     },
-    trips: {
-      title: t('page.trips.title', 'Trips'),
-      description: t('page.trips.description', ''),
-    },
-    tracking: {
-      title: t('page.tracking.title', 'Tracking'),
-      description: t('page.tracking.description', ''),
+    partners: {
+      title: 'Đối tác',
+      description: '',
     },
     gates: {
-      title: t('page.gates.title', 'Gates'),
-      description: t('page.gates.description', ''),
+      title: 'Cổng',
+      description: '',
     },
-    warehouse: {
-      title: t('page.warehouse.title', 'Warehouse'),
-      description: t('page.warehouse.description', ''),
-    },
+    
     costs: {
-      title: t('page.costs.title', 'Costs'),
-      description: t('page.costs.description', ''),
+      title: 'Chi phí',
+      description: '',
     },
     billing: {
-      title: t('page.billing.title', 'Billing'),
-      description: t('page.billing.description', ''),
+      title: 'Thanh toán',
+      description: '',
     },
     reports: {
-      title: t('page.reports.title', 'Reports'),
-      description: t('page.reports.description', ''),
+      title: 'Báo cáo',
+      description: '',
     },
     users: {
-      title: t('page.users.title', 'Users'),
-      description: t('page.users.description', ''),
+      title: 'Người dùng',
+      description: '',
     },
   }), [t])
 
   const menuItems = useMemo(
     () => [
-      { key: 'dashboard', label: t('menu.dashboard', 'Dashboard') },
-      { key: 'orders', label: t('menu.orders', 'Orders') },
-      { key: 'vehicles', label: t('menu.vehicles', 'Vehicles') },
-      { key: 'drivers', label: t('menu.drivers', 'Drivers') },
-      { key: 'trips', label: t('menu.trips', 'Trips') },
-      { key: 'tracking', label: t('menu.tracking', 'Tracking') },
-      { key: 'gates', label: t('menu.gates', 'Gates') },
-      { key: 'warehouse', label: t('menu.warehouse', 'Warehouse') },
-      { key: 'costs', label: t('menu.costs', 'Costs') },
-      { key: 'billing', label: t('menu.billing', 'Billing') },
-      { key: 'reports', label: t('menu.reports', 'Reports') },
-      { key: 'users', label: t('menu.users', 'Users') },
+      { key: 'dashboard', label: 'Bảng điều khiển' },
+      { key: 'orders', label: 'Đơn hàng' },
+      { key: 'vehicles', label: 'Phương tiện' },
+      { key: 'drivers', label: 'Tài xế' },
+      { key: 'partners', label: 'Đối tác' },
+      { key: 'gates', label: 'Cổng' },
+      { key: 'costs', label: 'Chi phí' },
+      { key: 'billing', label: 'Thanh toán' },
+      { key: 'reports', label: 'Báo cáo' },
+      { key: 'users', label: 'Người dùng' },
     ],
-    [t]
+    []
   )
 
   const metrics = useMemo(() => ({
@@ -158,7 +181,7 @@ function AppView({ t, language }) {
         t={t}
         language={language}
         activePage={activePage}
-        setActivePage={setActivePage}
+        setActivePage={requestPageChange}
         pageMeta={pageMeta}
         menuItems={menuItems}
       >

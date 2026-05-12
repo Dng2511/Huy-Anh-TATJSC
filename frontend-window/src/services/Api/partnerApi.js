@@ -28,13 +28,31 @@ export default {
             throw error;
         }
     },
-    deletePartners: async (ids) => {
+    deletePartner: async (id) => {
         try {
-            const response = await Http.delete('/partners', { data: { ids } });
+            const response = await Http.delete(`/partners/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error deleting partners:', error);
+            console.error('Error deleting partner:', error);
             throw error;
         }
     },
+    addDeliveryRate: async (partnerId, rateData) => {
+        try {
+            const response = await Http.post(`/partners/${partnerId}/rates`, rateData);
+            return response.data;
+        } catch (error) {
+            console.error('Error adding delivery rate:', error);
+            throw error;
+        }
+    },
+    removeDeliveryRate: async (partnerId, rateData) => {
+        try {
+            const response = await Http.delete(`/partners/${partnerId}/rates`, { data: rateData });
+            return response.data;
+        } catch (error) {
+            console.error('Error removing delivery rate:', error);
+            throw error;
+        }
+    }
 }

@@ -1,28 +1,28 @@
 import { Badge, Card, Progress, Table } from 'antd'
 
-function VehiclesPage({ t, vehicles, vehicleStatusColor }) {
+function VehiclesPage({ vehicles, vehicleStatusColor }) {
   return (
-    <Card title={t('vehicles.title', 'Danh sach phuong tien')} className="module-card">
+    <Card title={'Danh sách phương tiện'} className="module-card">
       <Table
         rowKey="key"
         dataSource={vehicles}
         pagination={{ pageSize: 5 }}
         scroll={{ x: 720 }}
         columns={[
-          { title: t('vehicles.column.plate', 'Bien so'), dataIndex: 'plate' },
-          { title: t('vehicles.column.type', 'Loai xe'), dataIndex: 'type' },
-          { title: t('vehicles.column.capacity', 'Tai trong'), dataIndex: 'capacity' },
+          { title: 'Biển số', dataIndex: 'plate' },
+          { title: 'Loại xe', dataIndex: 'type' },
+          { title: 'Tải trọng', dataIndex: 'capacity' },
           {
-            title: t('common.status', 'Trang thai'),
+            title: 'Trạng thái',
             dataIndex: 'status',
             render: (status) => <Badge color={vehicleStatusColor[status]} text={status} />,
           },
           {
-            title: t('vehicles.column.fuel', 'Nhien lieu'),
+            title: 'Nhiên liệu',
             dataIndex: 'fuel',
             render: (fuel) => <Progress percent={fuel} size="small" />,
           },
-          { title: t('vehicles.column.route', 'Tuyen hien tai'), dataIndex: 'route' },
+          { title: 'Tuyến hiện tại', dataIndex: 'route' },
         ]}
       />
     </Card>
