@@ -1,4 +1,5 @@
 import React from 'react';
+import { Modal } from 'antd';
 
 function useInlineRowEdit({
   containerRef,
@@ -48,6 +49,26 @@ function useInlineRowEdit({
     setOriginalRowData({});
   }, [editingRowId, editedRowData, onSave]);
 
+  const createModalConfirm = React.useCallback((confirmFn) => {
+    return new Promise((resolve) => {
+      Modal.confirm({
+        title: 'Xác nhận lưu thay đổi',
+        content: confirmFn?.() || 'Bạn có muốn lưu thay đổi?',
+        okText: 'Lưu',
+        cancelText: 'Hủy',
+        style: {
+          top: 250,
+        },
+        onOk() {
+          resolve(true);
+        },
+        onCancel() {
+          resolve(false);
+        },
+      });
+    });
+  }, []);
+
   React.useEffect(() => {
     const onClick = (e) => {
       if (!editingRowId) return;
@@ -70,11 +91,14 @@ function useInlineRowEdit({
         return;
       }
 
-      if (confirmSaveOutside()) {
-        handleSave();
-      } else {
-        handleCancel();
-      }
+      (async () => {
+        const shouldSave = await createModalConfirm(confirmSaveOutside);
+        if (shouldSave) {
+          handleSave();
+        } else {
+          handleCancel();
+        }
+      })();
     };
 
     const onKeyDown = (e) => {
@@ -82,9 +106,12 @@ function useInlineRowEdit({
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (!isDirty()) return;
-        if (confirmSaveShortcut()) {
-          handleSave();
-        }
+        (async () => {
+          const shouldSave = await createModalConfirm(confirmSaveShortcut);
+          if (shouldSave) {
+            handleSave();
+          }
+        })();
       }
     };
 
@@ -103,6 +130,7 @@ function useInlineRowEdit({
     confirmSaveOutside,
     confirmSaveShortcut,
     ignoreOutsideClickSelectors,
+    createModalConfirm,
   ]);
 
   return {

@@ -25,6 +25,9 @@ function AppView({ t, language }) {
         okText: 'Rời trang',
         cancelText: 'Hủy',
         okButtonProps: { danger: true },
+        style: {
+          top: 250,
+        },
         onOk: () => {
           setHasPartnersUnsavedChanges(false)
           setActivePage(nextPage)
@@ -109,7 +112,7 @@ function AppView({ t, language }) {
       title: 'Cổng',
       description: '',
     },
-    
+
     costs: {
       title: 'Chi phí',
       description: '',

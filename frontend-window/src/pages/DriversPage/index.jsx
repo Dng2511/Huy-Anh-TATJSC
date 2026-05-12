@@ -2,11 +2,12 @@ import { Button, Card, Flex, Table, Input, Select, Modal, Form } from 'antd'
 import React from 'react'
 import driverApi from '../../services/Api/driverApi'
 import useInlineRowEdit from '../../hooks/useInlineRowEdit'
+import useBulkRowDelete from '../../hooks/useBulkRowDelete'
+import BulkDeleteButton from '../../components/BulkDeleteButton'
 
 function DriversPage() {
   const [drivers, setDrivers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [selectedRowKeys, setSelectedRowKeys] = React.useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [creatingDriver, setCreatingDriver] = React.useState(false);
   const containerRef = React.useRef(null);
@@ -64,6 +65,22 @@ function DriversPage() {
   };
 
   const {
+    selectedRowKeys,
+    rowSelection,
+    handleDeleteSelected,
+  } = useBulkRowDelete({
+    deleteItems: (ids) => driverApi.deleteDrivers(ids),
+    onDeleted: fetchDrivers,
+    getEmptyMessage: () => 'Vui lòng chọn tài xế cần xóa',
+    getConfirmMessage: () => 'Bạn có chắc chắn muốn xóa những tài xế này?',
+    getErrorMessage: () => 'Lỗi khi xóa tài xế',
+    setLoading,
+    confirmTitle: 'Xác nhận xóa tài xế',
+    confirmOkText: 'Xóa',
+    confirmCancelText: 'Hủy',
+  });
+
+  const {
     editingRowId,
     editedRowData,
     setEditedRowData,
@@ -90,28 +107,9 @@ function DriversPage() {
         setLoading(false);
       }
     },
-    confirmSaveOutside: () => window.confirm('Bạn có muốn lưu thay đổi trước khi thoát?'),
-    confirmSaveShortcut: () => window.confirm('Bạn có muốn lưu các thay đổi?'),
+    confirmSaveOutside: () => 'Bạn có muốn lưu thay đổi trước khi thoát?',
+    confirmSaveShortcut: () => 'Bạn có muốn lưu các thay đổi?',
   });
-
-  const handleDeleteDrivers = async () => {
-    if (selectedRowKeys.length === 0) {
-      alert('Vui lòng chọn tài xế cần xóa');
-      return;
-    }
-
-    if (window.confirm('Bạn có chắc chắn muốn xóa những tài xế này?')) {
-      try {
-        setLoading(true);
-        await driverApi.deleteDrivers(selectedRowKeys);
-        setSelectedRowKeys([]);
-        await fetchDrivers();
-      } catch (error) {
-        console.error('Error deleting drivers:', error);
-        alert('Lỗi khi xóa tài xế');
-      }
-    }
-  };
 
   const handleQuickStatusChange = async (record, value) => {
     const previousStatus = record.status;
@@ -148,14 +146,6 @@ function DriversPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (newSelectedRowKeys) => {
-      setSelectedRowKeys(newSelectedRowKeys);
-    },
-    hideSelectAll: true,
   };
 
   return (
@@ -222,15 +212,11 @@ function DriversPage() {
           },
         ]}
       />
-      <Flex justify="flex-start" align="flex-end" style={{ marginTop: -50 }}>
-        <Button 
-          danger 
-          disabled={selectedRowKeys.length === 0}
-          onClick={handleDeleteDrivers}
-        >
-          {'Xóa tài xế'} ({selectedRowKeys.length})
-        </Button>
-      </Flex>
+      <BulkDeleteButton 
+        selectedRowKeys={selectedRowKeys}
+        onClick={handleDeleteSelected}
+        label="Xóa tài xế"
+      />
       </div>
       <Modal
         title={'Thêm tài xế'}

@@ -2,6 +2,8 @@ import { Button, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet'
 import gateApi from '../../services/Api/gateApi'
+import useBulkRowDelete from '../../hooks/useBulkRowDelete'
+import BulkDeleteButton from '../../components/BulkDeleteButton'
 import AddGateModal from './AddGateModal'
 import 'leaflet/dist/leaflet.css'
 import './GatesPage.css'
@@ -22,19 +24,19 @@ function GatesPage({ t }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    const fetchGates = async () => {
-      try {
-        const response = await gateApi.getGates()
-        const gateList = Array.isArray(response) ? response : response?.data || []
-        setGates(gateList)
-      } catch (error) {
-        console.error('Error fetching gates:', error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchGates = async () => {
+    try {
+      const response = await gateApi.getGates()
+      const gateList = Array.isArray(response) ? response : response?.data || []
+      setGates(gateList)
+    } catch (error) {
+      console.error('Error fetching gates:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchGates()
   }, [])
 
@@ -110,6 +112,26 @@ function GatesPage({ t }) {
     }
   }
 
+  const {
+    selectedRowKeys,
+    rowSelection,
+    handleDeleteSelected,
+  } = useBulkRowDelete({
+    deleteItems: (ids) => gateApi.deleteGates(ids),
+    onDeleted: async () => {
+      setSelectedGate(null)
+      await fetchGates()
+    },
+    getEmptyMessage: () => 'Vui lòng chọn cửa khẩu cần xóa',
+    getConfirmMessage: () =>
+      'Việc xóa cửa khẩu sẽ xóa cả giá cước của đối tác đang sử dụng chúng. Bạn có chắc chắn muốn xóa những cửa khẩu này?',
+    getErrorMessage: () => 'Lỗi khi xóa cửa khẩu',
+    setLoading,
+    confirmTitle: 'Xác nhận xóa cửa khẩu',
+    confirmOkText: 'Xóa',
+    confirmCancelText: 'Hủy',
+  })
+
   return (
     <Card className="module-card gates-page-card">
       <Row gutter={[16, 16]}>
@@ -128,6 +150,7 @@ function GatesPage({ t }) {
               dataSource={gates}
               loading={loading}
               pagination={{ pageSize: 8 }}
+              rowSelection={rowSelection}
               rowClassName={(record) => (selectedGate?._id === record._id ? 'selected-row' : '')}
               onRow={(record) => ({
                 onClick: () => {
@@ -151,6 +174,11 @@ function GatesPage({ t }) {
                   dataIndex: 'location',
                 },
               ]}
+            />
+            <BulkDeleteButton
+              selectedRowKeys={selectedRowKeys}
+              onClick={handleDeleteSelected}
+              label="Xóa cửa khẩu"
             />
           </div>
         </Col>

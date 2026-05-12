@@ -360,15 +360,6 @@ function PartnersPage({ t, onDirtyChange }) {
     }
   }
 
-  const confirmSaveChanges = () => {
-    Modal.confirm({
-      title: 'Xác nhận lưu thay đổi',
-      content: 'Bạn có chắc muốn lưu tất cả thay đổi chưa lưu?',
-      okText: 'Lưu',
-      cancelText: 'Hủy',
-      onOk: saveChanges,
-    })
-  }
 
   const getRateColumns = (partnerId) => [
     {
