@@ -333,20 +333,29 @@ Creates a new order.
 
 Retrieves all orders.
 
+**Query Parameters:**
+- `page` - Page number, starts from 1. Default: `1`
+- `limit` - Number of items per page. Default: `10`, maximum: `100`
+
 **Response (200 OK):**
 ```json
-[
-  {
-    "_id": "507f1f77bcf86cd799439013",
-    "id": "ORD001",
-    "type": "OUT",
-    "location": "A",
-    "status": "pending",
-    "cost": 500000,
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "updatedAt": "2024-01-15T10:30:00.000Z"
+{
+  "items": [
+    {
+      "_id": "507f1f77bcf86cd799439013",
+      "status": "pending",
+      "cost": 500000,
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "totalItems": 25,
+    "totalPages": 3,
+    "currentPage": 1,
+    "pageSize": 10
   }
-]
+}
 ```
 
 ---

@@ -1,4 +1,5 @@
 const Gate = require('../models/Gate');
+const Partner = require('../models/Partner');
 
 // CREATE
 exports.createGate = async (req, res) => {
@@ -83,6 +84,25 @@ exports.deleteGates = async (req, res) => {
                 message: 'ids must be an array',
             });
         }
+
+        await Partner.updateMany(
+            {
+                $or: [
+                    { 'rates.pickup': { $in: ids } },
+                    { 'rates.delivery': { $in: ids } },
+                ],
+            },
+            {
+                $pull: {
+                    rates: {
+                        $or: [
+                            { pickup: { $in: ids } },
+                            { delivery: { $in: ids } },
+                        ],
+                    },
+                },
+            }
+        );
 
         const result = await Gate.deleteMany({
             _id: { $in: ids }
