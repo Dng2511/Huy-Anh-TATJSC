@@ -35,50 +35,258 @@ async function seed() {
     ]);
 
     // Create gates
-    const gateNames = [
-      'Cửa khẩu Hữu Nghị',
-      'Cửa khẩu Tân Thanh',
-      'Cửa khẩu Lào Cai',
-      'Cửa khẩu Móng Cái',
-      'Cửa khẩu Cầu Treo',
-      'Cửa khẩu Lao Bảo'
+    const gatesData = [
+      {
+        name: 'Cửa khẩu Hữu Nghị',
+        location: 'QL1A, Đồng Đăng, Lạng Sơn, Việt Nam',
+        locate: {
+          lat: 21.9706221,
+          lng: 106.7111227
+        }
+      },
+      {
+        name: 'Cửa khẩu Móng Cái',
+        location: 'GXP9+8WC, Đ. Đại lộ Hoà Bình, Móng Cái 1, Quảng Ninh, Việt Nam',
+        locate: {
+          lat: 21.5358091,
+          lng: 107.9697573
+        }
+      },
+      {
+        name: 'Cửa khẩu Quốc tế Lào Cai',
+        location: '1 Nguyễn Huệ, p, Lào Cai, Việt Nam',
+        locate: {
+          lat: 22.5065298,
+          lng: 103.9658478
+        }
+      },
+      {
+        name: 'Cửa khẩu Trà Lĩnh',
+        location: 'TL 205, Cửa khẩu Trà Lĩnh, TL 205, Trà Lĩnh, Cao Bằng, Việt Nam',
+        locate: {
+          lat: 22.8724128,
+          lng: 106.3244756
+        }
+      },
+      {
+        name: 'Cửa khẩu Quốc Tế Thanh Thủy',
+        location: 'WVP2+83P, Thanh Thủy, Tuyên Quang, Việt Nam',
+        locate: {
+          lat: 22.9358477,
+          lng: 104.8502058
+        }
+      },
+      {
+        name: 'Ga Đồng Đăng',
+        location: 'QL1B, Cao Lộc, Lạng Sơn, Việt Nam',
+        locate: {
+          lat: 21.9438019,
+          lng: 106.6971159
+        }
+      },
+      {
+        name: 'Cửa khẩu Quốc tế Cha lo',
+        location: 'MQH8+9GW Cửa khẩu cha lo, QL12A, Dân Hóa, Quảng Trị, Việt Nam',
+        locate: {
+          lat: 17.6784983,
+          lng: 105.766322
+        }
+      },
+      {
+        name: 'Thakhek, Lào',
+        location: '9RX2+JGF, Thakhek, Lào',
+        locate: {
+          lat: 17.3990696,
+          lng: 104.801292
+        }
+      },
     ];
 
-    const gatesData = [];
-    for (let i = 0; i < N_GATES; i++) {
-      gatesData.push({
-        name: gateNames[i] || `Gate ${i + 1}`,
-        location: `${sample(['District 1','District 2','Industrial Park','Seaport'])}`,
-        locate: { lat: 10 + Math.random(), lng: 106 + Math.random() },
-      });
-    }
 
     const gates = await Gate.insertMany(gatesData);
 
     // Create partners
-    const partners = [];
-    for (let i = 0; i < N_PARTNERS; i++) {
-      const pickup = sample(gates)._id;
-      let delivery = sample(gates)._id;
-      while (delivery.equals(pickup)) delivery = sample(gates)._id;
-
-      partners.push({
-        name: `Partner ${i + 1}`,
+    const partners = [
+      {
+        name: 'HNT Logistics',
         contact: {
-          phone: `+8490${randInt(1000000, 9999999)}`,
-          email: `partner${i + 1}@example.com`,
+          phone: '0900000001',
+          email: 'hnt@example.com',
         },
+        waitingCost: 1000000,
         rates: [
+          // THAKHEK -> CHALO
           {
-            pickup,
-            delivery,
-            isReefer: Math.random() < 0.3,
-            fixedCost: randInt(100, 1000),
+            pickup: '6a0297bd01c60058aeb8ab21', // Thakhek
+            delivery: '6a0297bd01c60058aeb8ab20', // Chalo
+            isReefer: true,
+            fixedCost: 13000000,
+          },
+
+          // THAKHEK -> HỮU NGHỊ
+          {
+            pickup: '6a0297bd01c60058aeb8ab21',
+            delivery: '6a0297bd01c60058aeb8ab1a',
+            isReefer: true,
+            fixedCost: 61000000,
+          },
+
+          // CHALO -> HỮU NGHỊ
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1a',
+            isReefer: true,
+            fixedCost: 51000000,
+          },
+
+          // THAKHEK -> MÓNG CÁI
+          {
+            pickup: '6a0297bd01c60058aeb8ab21',
+            delivery: '6a0297bd01c60058aeb8ab1b',
+            isReefer: true,
+            fixedCost: 64000000,
+          },
+
+          // CHALO -> MÓNG CÁI
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1b',
+            isReefer: true,
+            fixedCost: 54000000,
+          },
+
+          // THAKHEK -> HÀ KHẨU (LÀO CAI)
+          {
+            pickup: '6a0297bd01c60058aeb8ab21',
+            delivery: '6a0297bd01c60058aeb8ab1c',
+            isReefer: true,
+            fixedCost: 65000000,
+          },
+
+          // CHALO -> HÀ KHẨU (LÀO CAI)
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1c',
+            isReefer: true,
+            fixedCost: 55000000,
+          },
+
+          // THAKHEK -> TRÀ LĨNH
+          {
+            pickup: '6a0297bd01c60058aeb8ab21',
+            delivery: '6a0297bd01c60058aeb8ab1d',
+            isReefer: true,
+            fixedCost: 68000000,
+          },
+
+          // CHALO -> TRÀ LĨNH
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1d',
+            isReefer: true,
+            fixedCost: 58000000,
+          },
+
+          // THAKHEK -> GA ĐỒNG ĐĂNG
+          {
+            pickup: '6a0297bd01c60058aeb8ab21',
+            delivery: '6a0297bd01c60058aeb8ab1f',
+            isReefer: true,
+            fixedCost: 51000000,
+          },
+
+          // CHALO -> GA ĐỒNG ĐĂNG
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1f',
+            isReefer: true,
+            fixedCost: 41000000,
           },
         ],
-        waitingCost: randInt(0, 200),
-      });
-    }
+      },
+
+      {
+        name: 'Thiên An - Tứ Tượng',
+        contact: {
+          phone: '0900000002',
+          email: 'tat@example.com',
+        },
+        waitingCost: 1000000,
+        rates: [
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1a',
+            isReefer: true,
+            fixedCost: 52000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1b',
+            isReefer: true,
+            fixedCost: 55000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1c',
+            isReefer: true,
+            fixedCost: 56000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1e',
+            isReefer: true,
+            fixedCost: 57000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1d',
+            isReefer: true,
+            fixedCost: 58000000,
+          },
+        ],
+      },
+
+      {
+        name: 'Container Reefer Express',
+        contact: {
+          phone: '0900000003',
+          email: 'reefer@example.com',
+        },
+        waitingCost: 1000000,
+        rates: [
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1a',
+            isReefer: true,
+            fixedCost: 46000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1b',
+            isReefer: true,
+            fixedCost: 49000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1c',
+            isReefer: true,
+            fixedCost: 50000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1e',
+            isReefer: true,
+            fixedCost: 51000000,
+          },
+          {
+            pickup: '6a0297bd01c60058aeb8ab20',
+            delivery: '6a0297bd01c60058aeb8ab1d',
+            isReefer: true,
+            fixedCost: 51000000,
+          },
+        ],
+      },
+    ];
 
     const createdPartners = await Partner.insertMany(partners);
 
