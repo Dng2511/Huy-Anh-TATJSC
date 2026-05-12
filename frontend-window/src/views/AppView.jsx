@@ -103,7 +103,7 @@ function AppView() {
       description: '',
     },
     gates: {
-      title: 'Cổng',
+      title: 'Cửa khẩu',
       description: '',
     },
 
@@ -132,7 +132,7 @@ function AppView() {
       { key: 'vehicles', label: 'Phương tiện' },
       { key: 'drivers', label: 'Tài xế' },
       { key: 'partners', label: 'Đối tác' },
-      { key: 'gates', label: 'Cổng' },
+      { key: 'gates', label: 'Cửa khẩu' },
       { key: 'costs', label: 'Chi phí' },
       { key: 'billing', label: 'Thanh toán' },
       { key: 'reports', label: 'Báo cáo' },
