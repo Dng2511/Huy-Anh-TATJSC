@@ -1,4 +1,6 @@
+const axios = require('axios');
 const Vehicle = require('../models/Vehicle');
+
 
 // Create a new vehicle
 exports.createVehicle = async (req, res) => {
@@ -31,13 +33,63 @@ exports.createVehicle = async (req, res) => {
 
 // Get all vehicles
 exports.getAllVehicles = async (req, res) => {
-  try {
-    const vehicles = await Vehicle.find();
-    res.status(200).json(vehicles);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    try {
+        const vehicles = await Vehicle.find();
+
+        const response = await axios.post(
+            'https://dvbk.vn/Home/get_AllTIBase',
+            {
+                UserID: 1106,
+            }
+        );
+
+        const trackingData = response.data;
+
+        // tạo map tracking
+        const trackingMap = {};
+
+        trackingData.forEach((item) => {
+            trackingMap[item.NormalizedPlate] = item;
+        });
+
+        // nối dữ liệu
+        const result = vehicles.map((vehicle) => {
+            const tracking =
+                trackingMap[vehicle.licensePlate];
+
+            return {
+                ...vehicle.toObject(),
+
+                tracking: tracking
+                    ? {
+                          lat: tracking.Lt,
+                          lng: tracking.Ln,
+                          speed: tracking.Speed,
+                          address: tracking.Address,
+                          driverName:
+                              tracking.DriverName,
+                          gpsStatus:
+                              tracking.GPSStatus,
+                          updatedAt:
+                              tracking.Date,
+                      }
+                    : null,
+            };
+        });
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            error: error.message,
+        });
+    }
 };
+
+function normalizePlate(plate) {
+  return plate
+    ?.toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
 
 // Get a single vehicle by ID
 exports.getVehicleById = async (req, res) => {

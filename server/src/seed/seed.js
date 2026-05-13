@@ -314,37 +314,68 @@ async function seed() {
     const createdDrivers = await Driver.insertMany(driversData);
 
     // Create vehicles and optionally assign drivers
-    const vehiclesData = [];
-    for (let i = 0; i < N_VEHICLES; i++) {
-      const plate = `29A-${randInt(1000, 9999)}`;
-      const assignedDriver = Math.random() < 0.7 ? sample(createdDrivers)._id : null;
-      vehiclesData.push({
-        licensePlate: plate,
-        driver: assignedDriver,
-        fuelRate: +(Math.random() * 10 + 5).toFixed(2),
-        status: sample(['idle', 'running', 'maintenance']),
-      });
-    }
+    const vehiclePlates = [
+      '15H-009.82',
+      '15C-122.64',
+      '15C-047.87',
+      '15C-145.63',
+      '15H-008.07',
+      '15C-147.06',
+      '15C-071.04',
+      '15C-144.09',
+      '15C-142.94',
+      '15C-144.99',
+    ];
+
+    // ======================
+    // CREATE VEHICLES
+    // ======================
+
+    const vehiclesData = vehiclePlates.map((plate) => ({
+      licensePlate: plate.replace(/[-.]/g, ''), // 15C14499
+      driver: null,
+      fuelRate: 33000,
+      status: 'idle',
+    }));
 
     const createdVehicles = await Vehicle.insertMany(vehiclesData);
 
-    // Create orders linking partner, driver, vehicle, and gates
-    const orderStatuses = ['planned', 'running', 'waiting', 'delivering', 'completed', 'cancelled'];
+    // ======================
+    // CREATE ORDERS
+    // ======================
+
+    const orderStatuses = [
+      'planned',
+      'running',
+      'waiting',
+      'delivering',
+      'completed',
+      'cancelled',
+    ];
+
     const ordersData = [];
 
     for (let i = 0; i < N_ORDERS; i++) {
       const pickupGate = sample(gates)._id;
+
       let deliveryGate = sample(gates)._id;
-      while (deliveryGate.equals(pickupGate)) deliveryGate = sample(gates)._id;
+
+      while (deliveryGate.equals(pickupGate)) {
+        deliveryGate = sample(gates)._id;
+      }
 
       const partner = sample(createdPartners)._id;
-      const vehicleObj = Math.random() < 0.9 ? sample(createdVehicles) : null;
-      const driverObj = vehicleObj && vehicleObj.driver ? null : (Math.random() < 0.6 ? sample(createdDrivers) : null);
+
+      // chọn xe
+      const vehicleObj = sample(createdVehicles);
+
+      // update status vehicle
+      vehicleObj.status = 'running';
 
       ordersData.push({
         partner,
-        driver: driverObj ? driverObj._id : (vehicleObj ? vehicleObj.driver : null),
-        vehicle: vehicleObj ? vehicleObj._id : null,
+        driver: null,
+        vehicle: vehicleObj._id,
         pickup: pickupGate,
         delivery: deliveryGate,
         isReefer: Math.random() < 0.2,
@@ -354,8 +385,16 @@ async function seed() {
       });
     }
 
-    const createdOrders = await Order.insertMany(ordersData);
+    // update status trong DB
+    await Promise.all(
+      createdVehicles.map((vehicle) =>
+        Vehicle.findByIdAndUpdate(vehicle._id, {
+          status: vehicle.status,
+        })
+      )
+    );
 
+    const createdOrders = await Order.insertMany(ordersData);
     console.log('Seed complete:');
     console.log(`  Gates: ${gates.length}`);
     console.log(`  Partners: ${createdPartners.length}`);
