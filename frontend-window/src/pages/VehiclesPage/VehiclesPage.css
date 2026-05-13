@@ -1,8 +1,8 @@
-.gates-page-card {
+.vehicles-page-card {
   min-height: calc(100vh - 200px);
 }
 
-.gates-panel {
+.vehicles-panel {
   border: 1px solid rgba(15, 74, 70, 0.12);
   border-radius: 12px;
   background: #ffffff;
@@ -10,25 +10,25 @@
   padding: 14px;
 }
 
-.gates-section-title.ant-typography {
+.vehicles-section-title.ant-typography {
   margin: 0 0 12px;
 }
 
-.gates-table-panel .ant-table-wrapper {
+.vehicles-table-panel .ant-table-wrapper {
   overflow: hidden;
 }
 
-.gates-table-panel .selected-row {
+.vehicles-table-panel .selected-row {
   background-color: rgba(14, 107, 99, 0.08) !important;
 }
 
-.gates-map-panel {
+.vehicles-map-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.gates-map {
+.vehicles-map {
   width: 100%;
   flex: 1;
   min-height: 0;
@@ -37,7 +37,7 @@
   overflow: hidden;
 }
 
-.gates-empty-map {
+.vehicles-empty-map {
   flex: 1;
   min-height: 0;
   border-radius: 10px;
@@ -47,14 +47,14 @@
   justify-content: center;
 }
 
-.gate-popup {
-  max-width: 240px;
+.vehicle-popup {
+  max-width: 280px;
   line-height: 1.35;
 }
 
 @media (max-width: 992px) {
-  .gates-map,
-  .gates-empty-map {
+  .vehicles-map,
+  .vehicles-empty-map {
     min-height: 480px;
   }
 }

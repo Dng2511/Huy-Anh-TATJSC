@@ -1,12 +1,21 @@
 import { Http } from '../Http'
 
 export default {
-    getOrders: async () => {
+    getOrders: async (params = {}) => {
         try {
-            const response = await Http.get('/orders');
+            const response = await Http.get('/orders', { params });
             return response.data;
         } catch (error) {
             console.error('Error fetching orders:', error);
+            throw error;
+        }
+    },
+    getOrderById: async (id) => {
+        try {
+            const response = await Http.get(`/orders/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching order:', error);
             throw error;
         }
     },

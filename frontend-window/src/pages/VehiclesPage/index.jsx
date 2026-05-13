@@ -1,30 +1,381 @@
-import { Badge, Card, Progress, Table } from 'antd'
+import { Badge, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
+import { useEffect, useRef, useState } from 'react'
+import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
+import { divIcon } from 'leaflet'
+import gateApi from '../../services/Api/gateApi'
+import vehicleApi from '../../services/Api/vehicleApi'
+import useBulkRowDelete from '../../hooks/useBulkRowDelete'
+import BulkDeleteButton from '../../components/BulkDeleteButton'
+import 'leaflet/dist/leaflet.css'
+import './VehiclesPage.css'
 
-function VehiclesPage({ vehicles, vehicleStatusColor }) {
+const { Text, Title } = Typography
+
+// Center roughly over Northern Vietnam (show Hanoi and surrounding region)
+const DEFAULT_CENTER = [21.0, 105.5]
+const DEFAULT_ZOOM = 6
+const SELECTED_VEHICLE_ZOOM = 15
+
+const vehicleStatusColor = {
+  idle: '#52c41a',
+  running: '#faad14',
+  maintenance: '#f5222d',
+  offline: '#8c8c8c',
+}
+
+const gpsStatusColor = {
+  live: '#1890ff',
+  offline: '#8c8c8c',
+}
+
+const createGateSquareIcon = (isSelected = false) => {
+  const size = isSelected ? 24 : 16
+
+  return divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;background:${isSelected ? '#faa524' : '#f5a524'};border:2px solid ${isSelected ? '#0a6960' : '#0e6b63'};box-sizing:border-box;border-radius:2px;"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
+}
+
+const formatLicensePlate = (licensePlate) => {
+  if (typeof licensePlate !== 'string') return licensePlate || '-'
+
+  const normalized = licensePlate.trim()
+  const match = normalized.match(/^([0-9A-Za-z]*?[A-Za-z]+)([0-9].*)$/)
+
+  return match ? `${match[1]}-${match[2]}` : normalized
+}
+
+const getGpsStatus = (vehicle) => vehicle?.tracking?.liveStatus || '-'
+
+const isGpsLive = (vehicle) => {
+  const liveStatus = vehicle?.tracking?.liveStatus
+  return typeof liveStatus === 'string' ? liveStatus.trim().length > 0 && liveStatus.trim() !== '-' : Boolean(liveStatus)
+}
+
+const getMarkerColors = (vehicle) => {
+  const gpsLive = isGpsLive(vehicle)
+
+  if (!gpsLive) {
+    return {
+      stroke: '#8c8c8c',
+      fill: '#bfbfbf',
+    }
+  }
+
+  if (vehicle?.status === 'running') {
+    return {
+      stroke: '#0958d9',
+      fill: '#1677ff',
+    }
+  }
+
+  if (vehicle?.status === 'idle') {
+    return {
+      stroke: '#08979c',
+      fill: '#13c2c2',
+    }
+  }
+
+  return {
+    stroke: '#d48806',
+    fill: '#faad14',
+  }
+}
+
+function VehicleMapController({ vehicles, gates, selectedVehicle }) {
+  const map = useMap()
+  const hasSetInitialViewRef = useRef(false)
+
+  useEffect(() => {
+    if (hasSetInitialViewRef.current) return
+
+    const validCoordinates = [
+      ...vehicles.map((vehicle) => ({ lat: Number(vehicle?.tracking?.lat), lng: Number(vehicle?.tracking?.lng) })),
+      ...gates.map((gate) => ({ lat: Number(gate?.locate?.lat), lng: Number(gate?.locate?.lng) })),
+    ].filter((coordinate) => Number.isFinite(coordinate.lat) && Number.isFinite(coordinate.lng))
+
+    if (!validCoordinates.length) {
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM)
+      return
+    }
+
+    if (validCoordinates.length === 1) {
+      map.setView([validCoordinates[0].lat, validCoordinates[0].lng], 15)
+      hasSetInitialViewRef.current = true
+      return
+    }
+
+    map.fitBounds(validCoordinates.map((coordinate) => [coordinate.lat, coordinate.lng]), {
+      padding: [50, 50],
+    })
+    hasSetInitialViewRef.current = true
+  }, [gates, map, vehicles])
+
+  useEffect(() => {
+    if (!selectedVehicle) return
+
+    const lat = Number(selectedVehicle?.tracking?.lat)
+    const lng = Number(selectedVehicle?.tracking?.lng)
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+
+    map.flyTo([lat, lng], SELECTED_VEHICLE_ZOOM, {
+      animate: true,
+      duration: 0.9,
+    })
+  }, [map, selectedVehicle])
+
+  return null
+}
+
+function VehiclesPage() {
+  const [vehicles, setVehicles] = useState([])
+  const [gates, setGates] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedVehicle, setSelectedVehicle] = useState(null)
+  const markerRefs = useRef({})
+
+  const fetchGates = async () => {
+    try {
+      const response = await gateApi.getGates()
+      const gateList = Array.isArray(response) ? response : response?.data || []
+      setGates(gateList)
+    } catch (error) {
+      console.error('Error fetching gates:', error)
+    }
+  }
+
+  const fetchVehicles = async () => {
+    try {
+      const response = await vehicleApi.getVehicles()
+      const vehicleList = Array.isArray(response) ? response : response?.data || []
+      setVehicles(vehicleList)
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+      message.error('Lỗi khi tải danh sách phương tiện')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      await Promise.all([fetchVehicles(), fetchGates()])
+    }
+
+    fetchAll()
+  }, [])
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchVehicles()
+      fetchGates()
+    }, 5000)
+
+    return () => clearInterval(intervalId)
+  }, [])
+
+  const {
+    selectedRowKeys,
+    rowSelection,
+    handleDeleteSelected,
+  } = useBulkRowDelete({
+    deleteItems: (ids) => vehicleApi.deleteVehicles(ids),
+    onDeleted: async () => {
+      setSelectedVehicle(null)
+      await fetchVehicles()
+    },
+    getEmptyMessage: () => 'Vui lòng chọn phương tiện cần xóa',
+    getConfirmMessage: () => 'Bạn có chắc chắn muốn xóa những phương tiện này?',
+    getErrorMessage: () => 'Lỗi khi xóa phương tiện',
+    setLoading,
+    confirmTitle: 'Xác nhận xóa phương tiện',
+    confirmOkText: 'Xóa',
+    confirmCancelText: 'Hủy',
+  })
+
   return (
-    <Card title={'Danh sách phương tiện'} className="module-card">
-      <Table
-        rowKey="key"
-        dataSource={vehicles}
-        pagination={{ pageSize: 5 }}
-        scroll={{ x: 720 }}
-        columns={[
-          { title: 'Biển số', dataIndex: 'plate' },
-          { title: 'Loại xe', dataIndex: 'type' },
-          { title: 'Tải trọng', dataIndex: 'capacity' },
-          {
-            title: 'Trạng thái',
-            dataIndex: 'status',
-            render: (status) => <Badge color={vehicleStatusColor[status]} text={status} />,
-          },
-          {
-            title: 'Nhiên liệu',
-            dataIndex: 'fuel',
-            render: (fuel) => <Progress percent={fuel} size="small" />,
-          },
-          { title: 'Tuyến hiện tại', dataIndex: 'route' },
-        ]}
-      />
+    <Card className="module-card vehicles-page-card">
+      <Row gutter={[16, 16]} align="stretch">
+        <Col xs={24} lg={12}>
+          <div className="vehicles-panel vehicles-table-panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <Title level={4} className="vehicles-section-title" style={{ margin: 0 }}>
+                {'Danh sách phương tiện'}
+              </Title>
+            </div>
+            <Table
+              rowKey="_id"
+              dataSource={vehicles}
+              loading={loading}
+              pagination={{ pageSize: 8 }}
+              rowSelection={rowSelection}
+              rowClassName={(record) => (selectedVehicle?._id === record._id ? 'selected-row' : '')}
+              onRow={(record) => ({
+                onClick: () => {
+                  setSelectedVehicle(record)
+                  // Open marker popup
+                  setTimeout(() => {
+                    if (markerRefs.current[record._id]) {
+                      markerRefs.current[record._id].openPopup()
+                    }
+                  }, 0)
+                },
+                style: { cursor: 'pointer' },
+              })}
+              columns={[
+                {
+                  title: 'Biển số',
+                  dataIndex: 'licensePlate',
+                  width: 100,
+                  render: (licensePlate) => formatLicensePlate(licensePlate),
+                },
+                {
+                  title: 'Địa chỉ GPS',
+                  dataIndex: ['tracking', 'address'],
+                  width: 200,
+                  render: (address) => address || '-',
+                },
+                {
+                  title: 'Phí nhiên liệu (L/100km)',
+                  dataIndex: 'fuelRate',
+                  width: 90,
+                  render: (rate) => (Number.isFinite(Number(rate)) ? Number(rate).toLocaleString('vi-VN') : '-'),
+                },
+                {
+                  title: 'Trạng thái',
+                  dataIndex: 'status',
+                  width: 90,
+                  render: (status) => <Badge color={vehicleStatusColor[status]} text={status} />,
+                },
+                {
+                  title: 'Tốc độ GPS',
+                  dataIndex: ['tracking', 'liveStatus'],
+                  width: 80,
+                  render: (_, record) => getGpsStatus(record),
+                },
+              ]}
+              scroll={{ x: 760 }}
+            />
+            <BulkDeleteButton
+              selectedRowKeys={selectedRowKeys}
+              onClick={handleDeleteSelected}
+              label="Xóa phương tiện"
+            />
+          </div>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <div className="vehicles-panel vehicles-map-panel">
+            <Title level={4} className="vehicles-section-title">
+              {'Bản đồ vị trí phương tiện'}
+            </Title>
+            {vehicles.length ? (
+              <MapContainer
+                center={DEFAULT_CENTER}
+                zoom={DEFAULT_ZOOM}
+                scrollWheelZoom
+                className="vehicles-map"
+                maxZoom={19}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
+                <VehicleMapController vehicles={vehicles} gates={gates} selectedVehicle={selectedVehicle} />
+
+                {gates.map((gate) => {
+                  const lat = Number(gate?.locate?.lat)
+                  const lng = Number(gate?.locate?.lng)
+                  const isSelectedGate = false
+
+                  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+
+                  return (
+                    <Marker
+                      key={gate._id}
+                      position={[lat, lng]}
+                      icon={createGateSquareIcon(isSelectedGate)}
+                    >
+                      <Popup>
+                        <div className="vehicle-popup">
+                          <Text strong>{gate.name}</Text>
+                          <br />
+                          <Text>{gate.location}</Text>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+                })}
+
+                {vehicles.map((vehicle) => {
+                  const lat = Number(vehicle?.tracking?.lat)
+                  const lng = Number(vehicle?.tracking?.lng)
+                  const isSelected = selectedVehicle?._id === vehicle._id
+
+                  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+
+                  const markerColors = getMarkerColors(vehicle)
+                  const selectedColor = '#ff7a45'
+
+                  return (
+                    <CircleMarker
+                      key={vehicle._id}
+                      ref={(el) => (markerRefs.current[vehicle._id] = el)}
+                      center={[lat, lng]}
+                      radius={isSelected ? 12 : 8}
+                      pathOptions={{
+                        color: isSelected ? selectedColor : markerColors.stroke,
+                        fillColor: isSelected ? selectedColor : markerColors.fill,
+                        fillOpacity: isSelected ? 1 : 0.8,
+                        weight: isSelected ? 3 : 2,
+                      }}
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedVehicle(vehicle)
+                          setTimeout(() => {
+                            if (markerRefs.current[vehicle._id]) {
+                              markerRefs.current[vehicle._id].openPopup()
+                            }
+                          }, 0)
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="vehicle-popup">
+                          <Text strong>{formatLicensePlate(vehicle.licensePlate)}</Text>
+                          <br />
+                          <Text>Người lái: {vehicle.tracking?.driverName || 'Chưa xác định'}</Text>
+                          <br />
+                          <Text>GPS: {getGpsStatus(vehicle)}</Text>
+                          <br />
+                          <Text>Vĩ độ: {vehicle.tracking?.lat}</Text>
+                          <br />
+                          <Text>Kinh độ: {vehicle.tracking?.lng}</Text>
+                          <br />
+                          <Text>Tốc độ: {vehicle.tracking.speed} km/h</Text>
+                          <br />
+                          <Text>Địa chỉ: {vehicle.tracking.address}</Text>
+                          <br />
+                          <Text>Trạng thái: {vehicle.status}</Text>
+                        </div>
+                      </Popup>
+                    </CircleMarker>
+                  )
+                })}
+              </MapContainer>
+            ) : (
+              <div className="vehicles-empty-map">
+                <Empty description={'Không có dữ liệu vị trí phương tiện'} />
+              </div>
+            )}
+          </div>
+        </Col>
+      </Row>
     </Card>
   )
 }

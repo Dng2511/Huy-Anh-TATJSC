@@ -1,6 +1,7 @@
 import { Button, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet'
+import { Marker, MapContainer, Popup, TileLayer } from 'react-leaflet'
+import { divIcon } from 'leaflet'
 import gateApi from '../../services/Api/gateApi'
 import useBulkRowDelete from '../../hooks/useBulkRowDelete'
 import BulkDeleteButton from '../../components/BulkDeleteButton'
@@ -13,6 +14,17 @@ const { Text, Title } = Typography
 // Center roughly over Northern Vietnam (show Hanoi and surrounding region)
 const DEFAULT_CENTER = [21.0, 105.5]
 const DEFAULT_ZOOM = 6
+
+const createGateSquareIcon = (isSelected = false) => {
+  const size = isSelected ? 24 : 16
+
+  return divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;background:${isSelected ? '#faa524' : '#f5a524'};border:2px solid ${isSelected ? '#0a6960' : '#0e6b63'};box-sizing:border-box;border-radius:2px;"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
+}
 
 function GatesPage() {
   const [gates, setGates] = useState([])
@@ -134,7 +146,7 @@ function GatesPage() {
 
   return (
     <Card className="module-card gates-page-card">
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} align="stretch">
         <Col xs={24} lg={12}>
           <div className="gates-panel gates-table-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -209,17 +221,11 @@ function GatesPage() {
                   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
 
                   return (
-                    <CircleMarker
+                    <Marker
                       key={gate._id}
                       ref={(el) => (markerRefs.current[gate._id] = el)}
-                      center={[lat, lng]}
-                      radius={isSelected ? 12 : 8}
-                      pathOptions={{
-                        color: isSelected ? '#0a6960' : '#0e6b63',
-                        fillColor: isSelected ? '#faa500' : '#f5a524',
-                        fillOpacity: isSelected ? 1 : 0.95,
-                        weight: isSelected ? 3 : 2,
-                      }}
+                      position={[lat, lng]}
+                      icon={createGateSquareIcon(isSelected)}
                       eventHandlers={{
                         click: () => {
                           setSelectedGate(gate)
@@ -233,7 +239,7 @@ function GatesPage() {
                           <Text>{gate.location}</Text>
                         </div>
                       </Popup>
-                    </CircleMarker>
+                    </Marker>
                   )
                 })}
               </MapContainer>

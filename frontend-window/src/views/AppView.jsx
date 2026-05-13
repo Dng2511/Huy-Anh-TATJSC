@@ -46,11 +46,11 @@ function AppView() {
           <OrdersPage
           />
         )
-      // case 'vehicles':
-      //   return (
-      //     <VehiclesPage
-      //     />
-      //   )
+      case 'vehicles':
+        return (
+          <VehiclesPage
+          />
+        )
       case 'drivers':
         return (
           <DriversPage
