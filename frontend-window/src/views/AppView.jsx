@@ -41,11 +41,11 @@ function AppView() {
 
   const renderPageContent = () => {
     switch (activePage) {
-      // case 'orders':
-      //   return (
-      //     <OrdersPage
-      //     />
-      //   )
+      case 'orders':
+        return (
+          <OrdersPage
+          />
+        )
       // case 'vehicles':
       //   return (
       //     <VehiclesPage
