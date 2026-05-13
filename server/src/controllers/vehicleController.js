@@ -33,56 +33,60 @@ exports.createVehicle = async (req, res) => {
 
 // Get all vehicles
 exports.getAllVehicles = async (req, res) => {
-    try {
-        const vehicles = await Vehicle.find();
+  try {
+    const vehicles = await Vehicle.find();
 
-        const response = await axios.post(
-            'https://dvbk.vn/Home/get_AllTIBase',
-            {
-                UserID: 1106,
-            }
-        );
+    const response = await axios.post(
+      'https://dvbk.vn/Home/get_AllTIBase',
+      {
+        UserID: 1106,
+      }
+    );
 
-        const trackingData = response.data;
+    const trackingData = response.data;
 
-        // tạo map tracking
-        const trackingMap = {};
+    // tạo map tracking
+    const trackingMap = {};
 
-        trackingData.forEach((item) => {
-            trackingMap[item.NormalizedPlate] = item;
-        });
+    trackingData.forEach((item) => {
+      trackingMap[item.NormalizedPlate] = item;
+    });
 
-        // nối dữ liệu
-        const result = vehicles.map((vehicle) => {
-            const tracking =
-                trackingMap[vehicle.licensePlate];
+    // nối dữ liệu
+    const result = vehicles.map((vehicle) => {
+      const tracking =
+        trackingMap[vehicle.licensePlate];
 
-            return {
-                ...vehicle.toObject(),
+      return {
+        ...vehicle.toObject(),
 
-                tracking: tracking
-                    ? {
-                          lat: tracking.Lt,
-                          lng: tracking.Ln,
-                          speed: tracking.Speed,
-                          address: tracking.Address,
-                          driverName:
-                              tracking.DriverName,
-                          gpsStatus:
-                              tracking.GPSStatus,
-                          updatedAt:
-                              tracking.Date,
-                      }
-                    : null,
-            };
-        });
+        tracking: tracking
+          ? {
+            lat: tracking.Lt,
+            lng: tracking.Ln,
+            speed: tracking.Speed,
+            address: tracking.Address,
+            driverName:
+              tracking.DriverName,
+            liveStatus:
+              tracking.Speed > 0
+                ? `${tracking.Speed} km/h`
+                : `Đỗ ${tracking.StopOrParkTime}`,
 
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({
-            error: error.message,
-        });
-    }
+            updatedAt:
+              tracking.Date,
+            image: tracking.ImageLink,
+          }
+          : null,
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
 };
 
 function normalizePlate(plate) {
