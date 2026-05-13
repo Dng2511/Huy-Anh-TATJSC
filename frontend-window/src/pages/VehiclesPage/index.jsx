@@ -172,7 +172,6 @@ function VehiclesPage() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchVehicles()
-      fetchGates()
     }, 5000)
 
     return () => clearInterval(intervalId)
