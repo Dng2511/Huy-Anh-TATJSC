@@ -59,6 +59,10 @@ exports.getAllOrders = async (req, res) => {
         if (req.query.driver) {
             filters.driver = req.query.driver;
         }
+        if (req.query.vehicle) {
+            filters.vehicle = req.query.vehicle;
+        }
+
         if (req.query.status) {
             filters.status = req.query.status;
         }
