@@ -1,6 +1,7 @@
 import { Button, Layout, Menu, Space, Typography } from 'antd'
 import { useState } from 'react'
 import { CreateOrderModalProvider, useCreateOrderModal } from '../context/CreateOrderModalContext'
+import { useAuth } from '../context/AuthContext'
 
 const { Header, Content, Sider } = Layout
 const { Title, Text } = Typography
@@ -51,6 +52,7 @@ function MainLayout({
             <Button className="header-action-btn" type="default">
               Xuất báo cáo
             </Button>
+            <LogoutButton />
             <CreateOrderButton setActivePage={setActivePage} />
           </Space>
         </Header>
@@ -62,6 +64,15 @@ function MainLayout({
 }
 
 export default MainLayout
+
+function LogoutButton() {
+  const { logout, user } = useAuth()
+  return (
+    <Button className="header-action-btn" onClick={() => logout()}>
+      Đăng xuất
+    </Button>
+  )
+}
 
 function CreateOrderButton({ setActivePage }) {
   // lazy import hook to avoid circular issues when provider is mounted at top-level

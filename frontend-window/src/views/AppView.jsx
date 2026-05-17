@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ConfigProvider, Modal } from 'antd'
+import { useAuth } from '../context/AuthContext'
+import LoginPage from '../pages/Auth/LoginPage'
 import MainLayout from '../layout/MainLayout'
 import { CreateOrderModalProvider } from '../context/CreateOrderModalContext'
 import DashboardPage from '../pages/DashboardPage'
@@ -11,6 +13,7 @@ import VehiclesPage from '../pages/VehiclesPage'
 import PartnersPage from '../pages/PartnersPage'
 
 function AppView() {
+  const { user, loading } = useAuth()
   const [activePage, setActivePage] = useState('dashboard')
   const [hasPartnersUnsavedChanges, setHasPartnersUnsavedChanges] = useState(false)
 
@@ -158,6 +161,10 @@ function AppView() {
       return `${value || 0}`
     }
   }
+
+  if (loading) return null
+
+  if (!user) return <LoginPage />
 
   return (
     <ConfigProvider

@@ -145,7 +145,26 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     }, [visible, initialParams])
 
     return (
-        <Modal title="Tạo đơn hàng mới" open={visible} onOk={handleOk} onCancel={onCancel} okText="Tạo" cancelText="Hủy">
+        <Modal
+            title={
+                initialParams?._id
+                    ? 'Thông tin đơn hàng'
+                    : 'Tạo đơn hàng mới'
+            }
+            open={visible}
+            onOk={handleOk} 
+            onCancel={onCancel}
+            okText={
+                initialParams?._id
+                    ? 'Lưu'
+                    : 'Tạo'
+            }
+            cancelText={
+                initialParams?._id
+                    ? 'Hủy'
+                    : 'Thoát'
+            }
+        >
             <div style={{ display: 'grid', gap: 12 }}>
                 <div>
                     <div style={{ marginBottom: 6, fontWeight: 500 }}>Đối tác</div>

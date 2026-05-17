@@ -3,18 +3,23 @@ require('express-async-errors');
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
+const ensureAdmin = require('./utils/ensureAdmin');
+const { requireAuth } = require('./middleware/auth');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const gateRoutes = require('./routes/gateRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173', credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -30,6 +35,8 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api', requireAuth);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/orders', orderRoutes);
@@ -55,6 +62,8 @@ const PORT = process.env.PORT || 3000;
 const startServer = async () => {
   try {
     await connectDB();
+    // ensure admin user exists when DB is empty
+    await ensureAdmin();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

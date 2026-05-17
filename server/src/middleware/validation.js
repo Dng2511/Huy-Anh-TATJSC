@@ -164,6 +164,18 @@ const orderSchema = Joi.object({
     waitingEnd: Joi.date().optional().allow(null),
 });
 
+// Auth (login) schema
+const loginSchema = Joi.object({
+  username: Joi.string().required().messages({
+    'string.empty': 'Username cannot be empty',
+    'any.required': 'Username is required',
+  }),
+  password: Joi.string().required().messages({
+    'string.empty': 'Password cannot be empty',
+    'any.required': 'Password is required',
+  }),
+});
+
 
 // Validation middleware factory
 const validate = (schema) => (req, res, next) => {
@@ -192,4 +204,5 @@ module.exports = {
   validateRate: validate(rateSchema),
   validateRemoveRates: validate(removeRatesSchema),
   validateOrder: validate(orderSchema),
+  validateLogin: validate(loginSchema),
 };
