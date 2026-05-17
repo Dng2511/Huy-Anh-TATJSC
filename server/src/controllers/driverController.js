@@ -32,7 +32,18 @@ exports.createDriver = async (req, res) => {
 // Get all drivers
 exports.getAllDrivers = async (req, res) => {
   try {
-    const drivers = await Driver.find().sort({ createdAt: -1 });
+    const filters = {};
+    if (req.query.name) {
+      filters.name = { $regex: req.query.name, $options: 'i' };
+    }
+    if (req.query.status) {
+      const statuses = req.query.status.split(',');
+
+      filters.status = {
+        $in: statuses,
+      };
+    }
+    const drivers = await Driver.find(filters).sort({ createdAt: -1 });
     res.status(200).json(drivers);
   } catch (error) {
     res.status(500).json({ error: error.message });

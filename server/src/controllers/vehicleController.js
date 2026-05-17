@@ -118,11 +118,18 @@ exports.getVehicleById = async (req, res) => {
 // Update a vehicle
 exports.updateVehicle = async (req, res) => {
   try {
-    const { id, licensePlate, fuelRate, status } = req.body;
+    const { id, licensePlate, fuelRate, status, driver } = req.body;
+
+    const update = {};
+    if (typeof id !== 'undefined') update.id = id;
+    if (typeof licensePlate !== 'undefined') update.licensePlate = licensePlate;
+    if (typeof fuelRate !== 'undefined') update.fuelRate = fuelRate;
+    if (typeof status !== 'undefined') update.status = status;
+    if (typeof driver !== 'undefined') update.driver = driver;
 
     const vehicle = await Vehicle.findOneAndUpdate(
-      { id: req.params.id },
-      { id, licensePlate, fuelRate, status },
+      { $or: [{ id: req.params.id }, { _id: req.params.id }] },
+      update,
       { new: true, runValidators: true }
     );
 
