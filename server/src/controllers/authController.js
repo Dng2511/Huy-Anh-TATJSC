@@ -105,6 +105,29 @@ exports.refresh = async (req, res) => {
   }
 };
 
+exports.changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'currentPassword and newPassword required' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    const ok = await bcrypt.compare(currentPassword, user.password);
+    if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    user.password = newPassword;
+    await user.save();
+
+    await Session.updateMany({ user: userId }, { revoked: true });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('changePassword error', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+};
+
 exports.logout = async (req, res) => {
   try {
     const token = req.cookies && req.cookies.refreshToken;
