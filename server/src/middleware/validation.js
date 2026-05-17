@@ -122,16 +122,14 @@ const partnerSchema = Joi.object({
 
 // Order validation schema
 const orderSchema = Joi.object({
-    partner: Joi.string().optional().messages({
-        'string.empty': 'Partner cannot be empty',
+    partner: Joi.string().allow(null, '').optional(),
+
+    driver: Joi.string().allow(null, '').optional().messages({
+        'string.base': 'Driver must be a string',
     }),
 
-    driver: Joi.string().optional().messages({
-        'string.empty': 'Driver cannot be empty',
-    }),
-
-    vehicle: Joi.string().optional().messages({
-        'string.empty': 'Vehicle cannot be empty',
+    vehicle: Joi.string().allow(null, '').optional().messages({
+        'string.base': 'Vehicle must be a string',
     }),
 
     pickup: Joi.string().required().messages({
@@ -147,14 +145,24 @@ const orderSchema = Joi.object({
     isReefer: Joi.boolean().default(false),
 
     status: Joi.string()
-        .valid('pending', 'confirmed', 'in_progress', 'completed', 'cancelled')
-        .default('pending'),
+        .valid(
+            'planned',
+            'running',
+            'waiting',
+            'delivering',
+            'completed',
+            'cancelled'
+        )
+        .default('planned'),
 
-    cost: Joi.number().min(0).optional(),
+    cost: Joi.number().min(0).default(0),
 
-    waitingCost: Joi.number().min(0).optional(),
+    waitingCost: Joi.number().min(0).default(0),
+
+    waitingStart: Joi.date().optional().allow(null),
+
+    waitingEnd: Joi.date().optional().allow(null),
 });
-
 
 
 // Validation middleware factory
