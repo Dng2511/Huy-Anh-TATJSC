@@ -4,6 +4,7 @@ import orderApi from '../../services/Api/orderApi'
 import partnerApi from '../../services/Api/partnerApi'
 import gateApi from '../../services/Api/gateApi'
 import vehicleApi from '../../services/Api/vehicleApi'
+import driverApi from '../../services/Api/driverApi'
 import formatLicensePlate from '../../utils/formatLicensePlate'
 
 export default function CreateOrderModal({ visible, onCancel, onCreated, initialParams }) {
@@ -11,12 +12,14 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     const [pickup, setPickup] = useState(null)
     const [delivery, setDelivery] = useState(null)
     const [vehicleId, setVehicleId] = useState(null)
+    const [driverId, setDriverId] = useState(null)
     const [isReefer, setIsReefer] = useState(true)
     const [cost, setCost] = useState(0)
     const [waitingCost, setWaitingCost] = useState(0)
     const [partners, setPartners] = useState([])
     const [gates, setGates] = useState([])
     const [vehicles, setVehicles] = useState([])
+    const [drivers, setDrivers] = useState([])
     const [status, setStatus] = useState('planned');
 
     useEffect(() => {
@@ -53,19 +56,22 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [pResp, gResp, vResp] = await Promise.all([
+                const [pResp, gResp, vResp, dResp] = await Promise.all([
                     partnerApi.getPartners(),
                     gateApi.getGates(),
                     vehicleApi.getVehicles(),
+                    driverApi.getDrivers(),
                 ])
 
                 const pList = Array.isArray(pResp) ? pResp : pResp?.data || []
                 const gList = Array.isArray(gResp) ? gResp : gResp?.data || []
                 const vList = Array.isArray(vResp) ? vResp : vResp?.data || []
+                const dList = Array.isArray(dResp) ? dResp : dResp?.data || []
 
                 setPartners(pList)
                 setGates(gList)
                 setVehicles(vList)
+                setDrivers(dList)
             } catch (err) {
                 console.error('Error fetching partners/gates/vehicles:', err)
                 message.error('Lỗi khi tải dữ liệu dùng để tạo đơn')
@@ -88,6 +94,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             pickup,
             delivery,
             vehicle: vehicleId || undefined,
+            driver: driverId || undefined,
             isReefer: Boolean(isReefer),
             cost: Number(cost) || 0,
             waitingCost: Number(waitingCost) || 0,
@@ -102,6 +109,17 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             } else {
                 await orderApi.createOrder(payload)
                 message.success('Tạo đơn hàng thành công')
+                // if vehicle exists and vehicle has no driver, and driver selected, update vehicle to assign driver
+                try {
+                    if (vehicleId && driverId) {
+                        const veh = (vehicles || []).find((v) => String(v._id) === String(vehicleId))
+                        if (veh && !veh.driver) {
+                            await vehicleApi.updateVehicle(vehicleId, { driver: driverId })
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Failed to update vehicle driver:', err)
+                }
             }
             // reset
             setPartnerId(null)
@@ -126,6 +144,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             setPickup(initialParams.pickup?._id || initialParams.pickup || null)
             setDelivery(initialParams.delivery?._id || initialParams.delivery || null)
             setVehicleId(initialParams.vehicle?._id || initialParams.vehicle || null)
+            setDriverId(initialParams.driver?._id || initialParams.driver || null)
             setIsReefer(Boolean(initialParams.isReefer))
             setCost(Number(initialParams.cost) || 0)
             setWaitingCost(Number(initialParams.waitingCost) || 0)
@@ -137,12 +156,25 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             setPickup(null)
             setDelivery(null)
             setVehicleId(null)
+            setDriverId(null)
             setIsReefer(false)
             setCost(0)
             setWaitingCost(0)
             setStatus('planned')
         }
     }, [visible, initialParams])
+
+    // when vehicle selection changes, if vehicle has driver, set driverId automatically
+    useEffect(() => {
+        if (!vehicleId) return
+        const veh = (vehicles || []).find((v) => String(v._id) === String(vehicleId))
+        if (veh) {
+            if (veh.driver) {
+                // driver may be populated object or id
+                setDriverId(veh.driver._id || veh.driver || null)
+            }
+        }
+    }, [vehicleId, vehicles])
 
     return (
         <Modal
@@ -152,7 +184,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
                     : 'Tạo đơn hàng mới'
             }
             open={visible}
-            onOk={handleOk} 
+            onOk={handleOk}
             onCancel={onCancel}
             okText={
                 initialParams?._id
@@ -199,20 +231,36 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
 
                 </div>
 
-                <div>
-                    <div style={{ marginBottom: 6, fontWeight: 500 }}>Xe (tùy chọn)</div>
-                    <Select
-                        placeholder="Chọn xe"
-                        value={vehicleId}
-                        onChange={setVehicleId}
-                        options={(vehicles || []).map((v) => ({
-                            label: `${formatLicensePlate(v.licensePlate || '')}`,
-                            value: v._id,
-                        }))}
-                        style={{ width: '100%' }}
-                        allowClear
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div>
+                        <div style={{ marginBottom: 6, fontWeight: 500 }}>Xe (tùy chọn)</div>
+                        <Select
+                            placeholder="Chọn xe"
+                            value={vehicleId}
+                            onChange={setVehicleId}
+                            options={(vehicles || []).map((v) => ({
+                                label: `${formatLicensePlate(v.licensePlate || '')}`,
+                                value: v._id,
+                            }))}
+                            style={{ width: '100%' }}
+                            allowClear
+                        />
+                    </div>
+                    <div>
+                        <div style={{ marginBottom: 6, fontWeight: 500 }}>Tài xế</div>
+                        <Select
+                            placeholder="Chọn tài xế"
+                            value={driverId}
+                            onChange={setDriverId}
+                            options={(drivers || []).map((d) => ({ label: d.name, value: d._id }))}
+                            style={{ width: '100%' }}
+                            allowClear
+                        />
+                    </div>
+
                 </div>
+
+
 
                 <div>
                     <div style={{ marginBottom: 6, fontWeight: 500 }}>Trạng thái</div>
