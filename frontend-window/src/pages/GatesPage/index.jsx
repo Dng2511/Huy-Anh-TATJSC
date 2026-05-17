@@ -1,7 +1,8 @@
 import { Button, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Marker, MapContainer, Popup, TileLayer } from 'react-leaflet'
-import { divIcon } from 'leaflet'
+import { createGateSquareIcon } from '../../utils/mapIcons'
+import { fitMapToCoordinates, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../utils/mapHelpers'
 import gateApi from '../../services/Api/gateApi'
 import useBulkRowDelete from '../../hooks/useBulkRowDelete'
 import BulkDeleteButton from '../../components/BulkDeleteButton'
@@ -12,19 +13,8 @@ import './GatesPage.css'
 const { Text, Title } = Typography
 
 // Center roughly over Northern Vietnam (show Hanoi and surrounding region)
-const DEFAULT_CENTER = [21.0, 105.5]
-const DEFAULT_ZOOM = 6
 
-const createGateSquareIcon = (isSelected = false) => {
-  const size = isSelected ? 24 : 16
-
-  return divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;background:${isSelected ? '#faa524' : '#f5a524'};border:2px solid ${isSelected ? '#0a6960' : '#0e6b63'};box-sizing:border-box;border-radius:2px;"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  })
-}
+// gate icon imported from src/utils/mapIcons
 
 function GatesPage() {
   const [gates, setGates] = useState([])
@@ -82,18 +72,7 @@ function GatesPage() {
       .map((g) => ({ lat: Number(g?.locate?.lat), lng: Number(g?.locate?.lng) }))
       .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng))
 
-    if (!validCoordinates.length) {
-      mapRef.current.setView(DEFAULT_CENTER, DEFAULT_ZOOM)
-      return
-    }
-
-    if (validCoordinates.length === 1) {
-      mapRef.current.setView([validCoordinates[0].lat, validCoordinates[0].lng], 12)
-      return
-    }
-
-    const latlngs = validCoordinates.map((c) => [c.lat, c.lng])
-    mapRef.current.fitBounds(latlngs, { padding: [50, 50] })
+    fitMapToCoordinates(mapRef.current, validCoordinates, { fallbackCenter: DEFAULT_CENTER, fallbackZoom: DEFAULT_ZOOM, singleZoom: 12 })
   }, [gates])
 
   // Handle add gate modal

@@ -1,7 +1,10 @@
 import { Badge, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
-import { divIcon } from 'leaflet'
+import formatLicensePlate from '../../utils/formatLicensePlate'
+import { getGpsStatus, getMarkerColors } from '../../utils/gpsHelpers'
+import { createGateSquareIcon } from '../../utils/mapIcons'
+import { fitMapToCoordinates, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../utils/mapHelpers'
 import gateApi from '../../services/Api/gateApi'
 import vehicleApi from '../../services/Api/vehicleApi'
 import useBulkRowDelete from '../../hooks/useBulkRowDelete'
@@ -12,8 +15,6 @@ import './VehiclesPage.css'
 const { Text, Title } = Typography
 
 // Center roughly over Northern Vietnam (show Hanoi and surrounding region)
-const DEFAULT_CENTER = [21.0, 105.5]
-const DEFAULT_ZOOM = 6
 const SELECTED_VEHICLE_ZOOM = 15
 
 const vehicleStatusColor = {
@@ -28,62 +29,11 @@ const gpsStatusColor = {
   offline: '#8c8c8c',
 }
 
-const createGateSquareIcon = (isSelected = false) => {
-  const size = isSelected ? 24 : 16
+// gate icon imported from src/utils/mapIcons
 
-  return divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;background:${isSelected ? '#faa524' : '#f5a524'};border:2px solid ${isSelected ? '#0a6960' : '#0e6b63'};box-sizing:border-box;border-radius:2px;"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  })
-}
+// formatLicensePlate is imported from src/utils/formatLicensePlate
 
-const formatLicensePlate = (licensePlate) => {
-  if (typeof licensePlate !== 'string') return licensePlate || '-'
-
-  const normalized = licensePlate.trim()
-  const match = normalized.match(/^([0-9A-Za-z]*?[A-Za-z]+)([0-9].*)$/)
-
-  return match ? `${match[1]}-${match[2]}` : normalized
-}
-
-const getGpsStatus = (vehicle) => vehicle?.tracking?.liveStatus || '-'
-
-const isGpsLive = (vehicle) => {
-  const liveStatus = vehicle?.tracking?.liveStatus
-  return typeof liveStatus === 'string' ? liveStatus.trim().length > 0 && liveStatus.trim() !== '-' : Boolean(liveStatus)
-}
-
-const getMarkerColors = (vehicle) => {
-  const gpsLive = isGpsLive(vehicle)
-
-  if (!gpsLive) {
-    return {
-      stroke: '#8c8c8c',
-      fill: '#bfbfbf',
-    }
-  }
-
-  if (vehicle?.status === 'running') {
-    return {
-      stroke: '#0958d9',
-      fill: '#1677ff',
-    }
-  }
-
-  if (vehicle?.status === 'idle') {
-    return {
-      stroke: '#08979c',
-      fill: '#13c2c2',
-    }
-  }
-
-  return {
-    stroke: '#d48806',
-    fill: '#faad14',
-  }
-}
+// GPS helpers imported from src/utils/gpsHelpers
 
 function VehicleMapController({ vehicles, gates, selectedVehicle }) {
   const map = useMap()
@@ -97,20 +47,7 @@ function VehicleMapController({ vehicles, gates, selectedVehicle }) {
       ...gates.map((gate) => ({ lat: Number(gate?.locate?.lat), lng: Number(gate?.locate?.lng) })),
     ].filter((coordinate) => Number.isFinite(coordinate.lat) && Number.isFinite(coordinate.lng))
 
-    if (!validCoordinates.length) {
-      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM)
-      return
-    }
-
-    if (validCoordinates.length === 1) {
-      map.setView([validCoordinates[0].lat, validCoordinates[0].lng], 15)
-      hasSetInitialViewRef.current = true
-      return
-    }
-
-    map.fitBounds(validCoordinates.map((coordinate) => [coordinate.lat, coordinate.lng]), {
-      padding: [50, 50],
-    })
+    fitMapToCoordinates(map, validCoordinates, { fallbackCenter: DEFAULT_CENTER, fallbackZoom: DEFAULT_ZOOM, singleZoom: SELECTED_VEHICLE_ZOOM })
     hasSetInitialViewRef.current = true
   }, [gates, map, vehicles])
 
