@@ -1,4 +1,6 @@
 import { Button, Layout, Menu, Space, Typography } from 'antd'
+import { useState } from 'react'
+import { CreateOrderModalProvider, useCreateOrderModal } from '../context/CreateOrderModalContext'
 
 const { Header, Content, Sider } = Layout
 const { Title, Text } = Typography
@@ -10,6 +12,9 @@ function MainLayout({
   menuItems,
   children,
 }) {
+
+  // We'll render modal via provider; get open function to call when header button clicked
+  const [localDummy, setLocalDummy] = useState(false)
 
   return (
     <Layout className="transport-layout">
@@ -46,9 +51,7 @@ function MainLayout({
             <Button className="header-action-btn" type="default">
               Xuất báo cáo
             </Button>
-            <Button className="header-action-btn" type="primary">
-              Tạo đơn vận chuyển
-            </Button>
+            <CreateOrderButton setActivePage={setActivePage} />
           </Space>
         </Header>
 
@@ -59,3 +62,34 @@ function MainLayout({
 }
 
 export default MainLayout
+
+function CreateOrderButton({ setActivePage }) {
+  // lazy import hook to avoid circular issues when provider is mounted at top-level
+  let openFn = null
+  try {
+    // require to avoid static import cycle
+    // eslint-disable-next-line global-require
+    const { useCreateOrderModal } = require('../context/CreateOrderModalContext')
+    // We can't call hook here; instead we'll render an inner component that uses the hook
+  } catch (e) {
+    // ignore
+  }
+
+  return <CreateOrderButtonInner setActivePage={setActivePage} />
+}
+
+function CreateOrderButtonInner({ setActivePage }) {
+  const { open } = useCreateOrderModal()
+  return (
+    <Button
+      className="header-action-btn"
+      type="primary"
+      onClick={() => {
+        open()
+        setActivePage('orders')
+      }}
+    >
+      Tạo đơn vận chuyển
+    </Button>
+  )
+}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ConfigProvider, Modal } from 'antd'
 import MainLayout from '../layout/MainLayout'
+import { CreateOrderModalProvider } from '../context/CreateOrderModalContext'
 import DashboardPage from '../pages/DashboardPage'
 import DriversPage from '../pages/DriversPage'
 import GatesPage from '../pages/GatesPage'
@@ -174,14 +175,16 @@ function AppView() {
         },
       }}
     >
-      <MainLayout
-        activePage={activePage}
-        setActivePage={requestPageChange}
-        pageMeta={pageMeta}
-        menuItems={menuItems}
-      >
-        {renderPageContent()}
-      </MainLayout>
+      <CreateOrderModalProvider onCreatedRedirect={() => setActivePage('orders')}>
+        <MainLayout
+          activePage={activePage}
+          setActivePage={requestPageChange}
+          pageMeta={pageMeta}
+          menuItems={menuItems}
+        >
+          {renderPageContent()}
+        </MainLayout>
+      </CreateOrderModalProvider>
     </ConfigProvider>
   )
 }

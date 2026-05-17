@@ -1,12 +1,19 @@
-import { Badge, Card, Select, Table, Tag, Typography, message, Pagination, Col, Row, Empty } from 'antd'
-import { useEffect, useRef, useState } from 'react'
+import { Badge, Card, Select, Table, Tag, Typography, message, Pagination, Col, Row, Button, Drawer, Descriptions } from 'antd'
+import { ArrowRightOutlined } from '@ant-design/icons';import { useEffect, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
-import { divIcon } from 'leaflet'
+import formatLicensePlate from '../../utils/formatLicensePlate'
+import { getGpsStatus, getMarkerColors } from '../../utils/gpsHelpers'
+import { createGateSquareIcon, createVehicleIcon } from '../../utils/mapIcons'
+import { fitMapToCoordinates } from '../../utils/mapHelpers'
 import orderApi from '../../services/Api/orderApi'
+import partnerApi from '../../services/Api/partnerApi'
 import vehicleApi from '../../services/Api/vehicleApi'
 import gateApi from '../../services/Api/gateApi'
+import useBulkRowDelete from '../../hooks/useBulkRowDelete'
+import BulkDeleteButton from '../../components/BulkDeleteButton'
 import 'leaflet/dist/leaflet.css'
 import './OrdersPage.css'
+import CreateOrderModal from './CreateOrderModal'
 
 const { Text, Title } = Typography
 
@@ -32,58 +39,9 @@ const statusDisplayName = {
   cancelled: 'Hủy',
 }
 
-const createGateSquareIcon = (isSelected = false) => {
-  const size = isSelected ? 24 : 16
+// map icons imported from src/utils/mapIcons
 
-  return divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;background:${isSelected ? '#faa524' : '#f5a524'};border:2px solid ${isSelected ? '#0a6960' : '#0e6b63'};box-sizing:border-box;border-radius:2px;"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  })
-}
-
-const createVehicleIcon = () => {
-  const size = 12
-  return divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;background:#1890ff;border:2px solid #0958d9;box-sizing:border-box;border-radius:50%;"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  })
-}
-
-const formatLicensePlate = (licensePlate) => {
-  if (typeof licensePlate !== 'string') return licensePlate || '-'
-  const normalized = licensePlate.trim()
-  const match = normalized.match(/^([0-9A-Za-z]*?[A-Za-z]+)([0-9].*)$/)
-  return match ? `${match[1]}-${match[2]}` : normalized
-}
-
-const getGpsStatus = (vehicle) => vehicle?.tracking?.liveStatus || '-'
-
-const isGpsLive = (vehicle) => {
-  const liveStatus = vehicle?.tracking?.liveStatus
-  return typeof liveStatus === 'string' ? liveStatus.trim().length > 0 && liveStatus.trim() !== '-' : Boolean(liveStatus)
-}
-
-const getMarkerColors = (vehicle) => {
-  const gpsLive = isGpsLive(vehicle)
-
-  if (!gpsLive) {
-    return { stroke: '#8c8c8c', fill: '#bfbfbf' }
-  }
-
-  if (vehicle?.status === 'running') {
-    return { stroke: '#0958d9', fill: '#1677ff' }
-  }
-
-  if (vehicle?.status === 'idle') {
-    return { stroke: '#08979c', fill: '#13c2c2' }
-  }
-
-  return { stroke: '#d48806', fill: '#faad14' }
-}
+// GPS helpers imported from src/utils/gpsHelpers
 
 function OrderMapController({ coordinates, selectedOrder }) {
   const map = useMap()
@@ -102,19 +60,7 @@ function OrderMapController({ coordinates, selectedOrder }) {
     // Otherwise fit to provided coordinates (vehicles + gates)
     if (hasSetInitialViewRef.current) return
     const validCoordinates = (coordinates || []).filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lng))
-    if (!validCoordinates.length) {
-      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM)
-      hasSetInitialViewRef.current = true
-      return
-    }
-
-    if (validCoordinates.length === 1) {
-      map.setView([validCoordinates[0].lat, validCoordinates[0].lng], SELECTED_ZOOM)
-      hasSetInitialViewRef.current = true
-      return
-    }
-
-    map.fitBounds(validCoordinates.map((c) => [c.lat, c.lng]), { padding: [50, 50] })
+    fitMapToCoordinates(map, validCoordinates, { fallbackCenter: DEFAULT_CENTER, fallbackZoom: DEFAULT_ZOOM, singleZoom: SELECTED_ZOOM })
     hasSetInitialViewRef.current = true
   }, [map, selectedOrder, coordinates])
 
@@ -125,7 +71,10 @@ function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [partners, setPartners] = useState([])
+  const [partnersFull, setPartnersFull] = useState([])
   const [searchPartner, setSearchPartner] = useState(null)
+  const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [createModalInitial, setCreateModalInitial] = useState(null)
   const [searchStatus, setSearchStatus] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(8)
@@ -143,6 +92,16 @@ function OrdersPage() {
       setGates(gateList)
     } catch (error) {
       console.error('Error fetching gates:', error)
+    }
+  }
+
+  const fetchPartners = async () => {
+    try {
+      const response = await partnerApi.getPartners()
+      const list = Array.isArray(response) ? response : response?.data || []
+      setPartnersFull(list)
+    } catch (err) {
+      console.error('Error fetching partners list:', err)
     }
   }
 
@@ -177,7 +136,7 @@ function OrdersPage() {
   const fetchRoute = async (pickupLocate, deliveryLocate) => {
     // Clear old route immediately while loading new one
     setRouteCoords(null)
-    
+
     if (!pickupLocate || !deliveryLocate) {
       return
     }
@@ -249,12 +208,42 @@ function OrdersPage() {
     }
   }
 
+  const {
+    selectedRowKeys,
+    rowSelection,
+    handleDeleteSelected,
+  } = useBulkRowDelete({
+    deleteItems: (ids) => orderApi.deleteOrders(ids),
+    onDeleted: async () => {
+      setSelectedOrder(null)
+      await fetchOrders(1, searchPartner, searchStatus)
+    },
+    getEmptyMessage: () => 'Vui lòng chọn đơn hàng cần xóa',
+    getConfirmMessage: () => 'Bạn có chắc chắn muốn xóa các đơn hàng đã chọn?',
+    getErrorMessage: () => 'Lỗi khi xóa đơn hàng',
+    setLoading,
+    confirmTitle: 'Xác nhận xóa đơn hàng',
+    confirmOkText: 'Xóa',
+    confirmCancelText: 'Hủy',
+  })
+
   useEffect(() => {
     // initial load
     fetchOrders(currentPage, searchPartner, searchStatus)
     fetchGates()
     fetchVehicles()
+    fetchPartners()
   }, [])
+
+  // When an order is created elsewhere (CreateOrderModal via context), refresh list
+  useEffect(() => {
+    const handleOrderCreated = () => {
+      fetchOrders(1, searchPartner, searchStatus)
+    }
+
+    window.addEventListener('order:created', handleOrderCreated)
+    return () => window.removeEventListener('order:created', handleOrderCreated)
+  }, [searchPartner, searchStatus])
 
   useEffect(() => {
     // Refresh vehicles periodically
@@ -307,6 +296,12 @@ function OrdersPage() {
     fetchOrders(page, searchPartner, searchStatus)
   }
 
+  const handleRowClick = (record) => {
+    setSelectedOrder(record)
+  }
+
+
+
   const getOrderCoordinates = () => {
     const coords = []
     const pickupGate = gates.find((g) => g._id === selectedOrder?.pickup?._id)
@@ -345,6 +340,9 @@ function OrdersPage() {
               <Title level={4} className="orders-section-title" style={{ margin: 0 }}>
                 {'Danh sách đơn hàng'}
               </Title>
+              <div>
+                <Button type="primary" onClick={() => setCreateModalVisible(true)}>Tạo đơn mới</Button>
+              </div>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
@@ -393,87 +391,98 @@ function OrdersPage() {
             </div>
 
             <Table
-          rowKey="_id"
-          dataSource={orders}
-          loading={loading}
-          pagination={false}
-          scroll={{ x: 1200 }}
-            rowClassName={(record) => (selectedOrder?._id === record._id ? 'selected-row' : '')}
-            onRow={(record) => ({
-              onClick: () => setSelectedOrder(record),
-              style: { cursor: 'pointer' },
-            })}
-          columns={[
-            {
-              title: 'Đối tác',
-              dataIndex: ['partner', 'name'],
-              width: 150,
-              render: (text) => text || '-',
-            },
-            {
-              title: 'Xe',
-              dataIndex: ['vehicle', 'licensePlate'],
-              width: 100,
-              render: (text) => {
-                if (typeof text !== 'string') return '-'
-                const normalized = text.trim()
-                const match = normalized.match(/^([0-9A-Za-z]*?[A-Za-z]+)([0-9].*)$/)
-                return match ? `${match[1]}-${match[2]}` : normalized
-              },
-            },
-            {
-              title: 'Lấy hàng',
-              dataIndex: ['pickup', 'name'],
-              width: 180,
-              render: (text) => text || '-',
-            },
-            {
-              title: 'Giao hàng',
-              dataIndex: ['delivery', 'name'],
-              width: 180,
-              render: (text) => text || '-',
-            },
-            {
-              title: 'Reefer',
-              dataIndex: 'isReefer',
-              width: 80,
-              render: (isReefer) => (
-                <Badge color={isReefer ? '#1890ff' : '#d9d9d9'} text={isReefer ? 'Có' : 'Không'} />
-              ),
-            },
-            {
-              title: 'Trạng thái',
-              dataIndex: 'status',
-              width: 100,
-              render: (status) => (
-                <Tag color={orderStatusColor[status]}>
-                  {statusDisplayName[status] || status}
-                </Tag>
-              ),
-            },
-            {
-              title: 'Chi phí',
-              dataIndex: 'cost',
-              width: 100,
-              render: (cost) => (Number.isFinite(Number(cost)) ? Number(cost).toLocaleString('vi-VN') : '-'),
-            },
-            {
-              title: 'Chờ',
-              dataIndex: 'waitingCost',
-              width: 80,
-              render: (cost) => (Number.isFinite(Number(cost)) ? Number(cost).toLocaleString('vi-VN') : '-'),
-            },
-          ]}
-        />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              rowKey="_id"
+              dataSource={orders}
+              loading={loading}
+              pagination={false}
+              onRow={(record) => ({
+                onClick: (event) => {
+                  const target = event?.target
+                  if (target?.closest?.('button, input, label, .ant-checkbox-wrapper, .ant-btn, .ant-dropdown-trigger')) {
+                    return
+                  }
+                  handleRowClick(record)
+                },
+              })}
+              rowSelection={rowSelection}
+              rowClassName={(record) => (selectedOrder?._id === record._id ? 'selected-row' : '')}
+              columns={[
+                {
+                  title: 'ID',
+                  dataIndex: '_id',
+                  width: 50,
+                  render: (id) => id.slice(-6).toUpperCase(),
+                },
+                {
+                  title: 'Tuyến',
+                  width: 220,
+                  render: (_, record) => (
+                    <div className="flex flex-col gap-2">
+                      <div className="font-medium">
+                        {record.pickup?.name || '-'}
+                      </div>
+
+                      <div className="text-gray-500 text-sm flex items-center gap-1">
+                        {record.delivery?.name || '-'}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: 'Trạng thái',
+                  dataIndex: 'status',
+                  width: 100,
+                  render: (status) => (
+                    <Tag color={orderStatusColor[status]}>
+                      {statusDisplayName[status] || status}
+                    </Tag>
+                  ),
+                },
+                {
+                  title: 'Xe',
+                  dataIndex: ['vehicle'],
+                  width: 100,
+                  render: (vehicle) => {
+                    if (!vehicle) return '-'
+                    return `${formatLicensePlate(vehicle.licensePlate)}`
+                  },
+                },
+                {
+                  title: 'Cuớc nhận',
+                  dataIndex: 'cost',
+                  width: 120,
+                  render: (cost) => {
+                    if (!Number.isFinite(Number(cost))) return '0'
+                    return `${cost}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                  }
+                },
+                {
+                  title: 'Hành động',
+                  key: 'actions',
+                  width: 100,
+                  render: (_, record) => (
+                    <Button size="small" onClick={() => {
+                      setCreateModalInitial(record)
+                      setCreateModalVisible(true)
+                    }}>Xem chi tiết</Button>
+                  ),
+                },
+              ]}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+              <div style={{ paddingTop: 60 }}>
+                <BulkDeleteButton
+                  selectedRowKeys={selectedRowKeys}
+                  onClick={handleDeleteSelected}
+                  label="Xóa đơn hàng"
+                />
+              </div>
+
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
                 total={totalItems}
                 onChange={handlePageChange}
-                pageSizeOptions={["8", "16", "24"]}
-                onShowSizeChange={(_, size) => setPageSize(size)}
-                showSizeChanger
                 showTotal={(total) => `Tổng ${total} đơn hàng`}
               />
             </div>
@@ -650,7 +659,21 @@ function OrdersPage() {
         </Col>
       </Row>
 
-      
+      <CreateOrderModal
+        visible={createModalVisible}
+        initialParams={createModalInitial}
+        onCancel={() => {
+          setCreateModalVisible(false)
+          setCreateModalInitial(null)
+        }}
+        onCreated={() => {
+          setCreateModalVisible(false)
+          setCreateModalInitial(null)
+          fetchOrders(1, searchPartner, searchStatus)
+        }}
+      />
+
+
     </Card>
   )
 }

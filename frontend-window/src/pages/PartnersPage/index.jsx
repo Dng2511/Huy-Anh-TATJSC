@@ -418,13 +418,7 @@ function PartnersPage({ onDirtyChange }) {
       ),
       width: 180,
     },
-    {
-      title: 'Xem nhanh',
-      dataIndex: 'fixedCostPreview',
-      key: 'fixedCostPreview',
-      render: (_, record) => <Text strong>{formatCurrency(record.fixedCost)}</Text>,
-      width: 170,
-    },
+
   ]
 
   const getCollapseItems = () => {
