@@ -32,9 +32,6 @@ const driverSchema = Joi.object({
     'string.empty': 'License number cannot be empty',
     'any.required': 'License number is required',
   }),
-  status: Joi.string()
-    .valid('available', 'on_trip', 'off')
-    .default('available'),
 });
 
 
@@ -176,6 +173,32 @@ const loginSchema = Joi.object({
   }),
 });
 
+const userCreateSchema = Joi.object({
+  name: Joi.string().trim().required().messages({
+    'string.empty': 'Name cannot be empty',
+    'any.required': 'Name is required',
+  }),
+  username: Joi.string().trim().required().messages({
+    'string.empty': 'Username cannot be empty',
+    'any.required': 'Username is required',
+  }),
+  password: Joi.string().min(6).required().messages({
+    'string.empty': 'Password cannot be empty',
+    'string.min': 'Password must be at least 6 characters',
+    'any.required': 'Password is required',
+  }),
+  role: Joi.string().valid('admin', 'user').default('user'),
+});
+
+const userUpdateSchema = Joi.object({
+  name: Joi.string().trim().optional(),
+  username: Joi.string().trim().optional(),
+  password: Joi.string().min(6).allow('').optional().messages({
+    'string.min': 'Password must be at least 6 characters',
+  }),
+  role: Joi.string().valid('admin', 'user').optional(),
+}).min(1);
+
 
 // Validation middleware factory
 const validate = (schema) => (req, res, next) => {
@@ -205,4 +228,6 @@ module.exports = {
   validateRemoveRates: validate(removeRatesSchema),
   validateOrder: validate(orderSchema),
   validateLogin: validate(loginSchema),
+  validateUserCreate: validate(userCreateSchema),
+  validateUserUpdate: validate(userUpdateSchema),
 };

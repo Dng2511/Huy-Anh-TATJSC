@@ -1,6 +1,5 @@
 import { Button, Layout, Menu, Space, Typography } from 'antd'
-import { useState } from 'react'
-import { CreateOrderModalProvider, useCreateOrderModal } from '../context/CreateOrderModalContext'
+import { useCreateOrderModal } from '../context/CreateOrderModalContext'
 import { useAuth } from '../context/AuthContext'
 
 const { Header, Content, Sider } = Layout
@@ -13,10 +12,6 @@ function MainLayout({
   menuItems,
   children,
 }) {
-
-  // We'll render modal via provider; get open function to call when header button clicked
-  const [localDummy, setLocalDummy] = useState(false)
-
   return (
     <Layout className="transport-layout">
       <Sider
@@ -39,7 +34,7 @@ function MainLayout({
         <Header className="transport-header">
           <div>
             <Title level={2} className="heading-title">
-              {pageMeta[activePage].title}
+              {pageMeta[activePage]?.title || pageMeta.dashboard?.title || ''}
             </Title>
             
           </div>
@@ -66,7 +61,7 @@ function MainLayout({
 export default MainLayout
 
 function LogoutButton() {
-  const { logout, user } = useAuth()
+  const { logout } = useAuth()
   return (
     <Button className="header-action-btn" onClick={() => logout()}>
       Đăng xuất

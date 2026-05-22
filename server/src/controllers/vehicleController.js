@@ -34,7 +34,7 @@ exports.createVehicle = async (req, res) => {
 // Get all vehicles
 exports.getAllVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find();
+    const vehicles = await Vehicle.find().populate('driver', 'name');
 
     const response = await axios.post(
       'https://dvbk.vn/Home/get_AllTIBase',
@@ -98,7 +98,7 @@ function normalizePlate(plate) {
 // Get a single vehicle by ID
 exports.getVehicleById = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findOne({ id: req.params.id });
+    const vehicle = await Vehicle.findOne({ id: req.params.id }).populate('driver', 'name');
 
     if (!vehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
@@ -118,27 +118,53 @@ exports.getVehicleById = async (req, res) => {
 // Update a vehicle
 exports.updateVehicle = async (req, res) => {
   try {
-    const { id, licensePlate, fuelRate, status, driver } = req.body;
+    const { licensePlate, fuelRate, status, driver } = req.body;
 
     const update = {};
-    if (typeof id !== 'undefined') update.id = id;
     if (typeof licensePlate !== 'undefined') update.licensePlate = licensePlate;
     if (typeof fuelRate !== 'undefined') update.fuelRate = fuelRate;
     if (typeof status !== 'undefined') update.status = status;
     if (typeof driver !== 'undefined') update.driver = driver;
 
-    const vehicle = await Vehicle.findOneAndUpdate(
-      { $or: [{ id: req.params.id }, { _id: req.params.id }] },
-      update,
-      { new: true, runValidators: true }
-    );
+    const currentVehicle = await Vehicle.findById(req.params.id);
 
-    if (!vehicle) {
+    if (!currentVehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
 
+    if (typeof id !== 'undefined') update.id = id;
+    if (typeof licensePlate !== 'undefined') update.licensePlate = licensePlate;
+    if (typeof fuelRate !== 'undefined') update.fuelRate = fuelRate;
+    if (typeof status !== 'undefined') update.status = status;
+
+    if (typeof driver !== 'undefined') {
+
+      const oldDriver = currentVehicle.driver;
+
+      const anotherVehicle = await Vehicle.findOne({
+        driver,
+        _id: { $ne: currentVehicle._id },
+      });
+
+      if (anotherVehicle) {
+        anotherVehicle.driver = oldDriver || null;
+        await anotherVehicle.save();
+      }
+
+      update.driver = driver;
+    }
+
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      currentVehicle._id,
+      update,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     res.status(200).json(vehicle);
+
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

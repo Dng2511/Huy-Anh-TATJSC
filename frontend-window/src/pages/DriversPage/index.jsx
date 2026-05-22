@@ -1,7 +1,6 @@
-import { Button, Card, Flex, Table, Input, Select, Modal, Form } from 'antd'
+import { Button, Card, Flex, Table, Input, Modal, Form, Space, message } from 'antd'
 import React from 'react'
 import driverApi from '../../services/Api/driverApi'
-import useInlineRowEdit from '../../hooks/useInlineRowEdit'
 import useBulkRowDelete from '../../hooks/useBulkRowDelete'
 import BulkDeleteButton from '../../components/BulkDeleteButton'
 
@@ -10,13 +9,9 @@ function DriversPage() {
   const [loading, setLoading] = React.useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [creatingDriver, setCreatingDriver] = React.useState(false);
-  const containerRef = React.useRef(null);
+  const [modalMode, setModalMode] = React.useState('create');
+  const [editingDriverId, setEditingDriverId] = React.useState(null);
   const [addForm] = Form.useForm();
-  const driverStatusColor = {
-    available: 'green',
-    on_trip: 'blue',
-    off: 'red',
-  };
 
   const fetchDrivers = async () => {
     try {
@@ -34,31 +29,51 @@ function DriversPage() {
   }, []);
 
   const handleAddDriver = () => {
+    setModalMode('create');
+    setEditingDriverId(null);
     addForm.setFieldsValue({
       name: '',
       licenseNumber: '',
       phone: '',
-      status: 'available',
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleEditDriver = (record) => {
+    setModalMode('edit');
+    setEditingDriverId(record._id);
+    addForm.setFieldsValue({
+      name: record.name,
+      licenseNumber: record.licenseNumber,
+      phone: record.phone,
     });
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
+    setModalMode('create');
+    setEditingDriverId(null);
     addForm.resetFields();
   };
 
-  const handleCreateDriver = async () => {
+  const handleSubmitDriver = async () => {
     try {
       const values = await addForm.validateFields();
       setCreatingDriver(true);
-      await driverApi.createDriver(values);
+      if (modalMode === 'edit' && editingDriverId) {
+        await driverApi.updateDriver(editingDriverId, values);
+        message.success('Cập nhật tài xế thành công');
+      } else {
+        await driverApi.createDriver(values);
+        message.success('Thêm tài xế thành công');
+      }
       handleCloseAddModal();
       await fetchDrivers();
     } catch (error) {
       if (error?.errorFields) return;
-      console.error('Error creating driver:', error);
-      alert('Lỗi khi thêm tài xế');
+      console.error('Error saving driver:', error);
+      message.error(modalMode === 'edit' ? 'Lỗi khi cập nhật tài xế' : 'Lỗi khi thêm tài xế');
     } finally {
       setCreatingDriver(false);
     }
@@ -80,73 +95,6 @@ function DriversPage() {
     confirmCancelText: 'Hủy',
   });
 
-  const {
-    editingRowId,
-    editedRowData,
-    setEditedRowData,
-    setOriginalRowData,
-    handleEnterEdit,
-  } = useInlineRowEdit({
-    containerRef,
-    getInitialData: (record) => ({
-      name: record.name,
-      licenseNumber: record.licenseNumber,
-      phone: record.phone,
-      status: record.status,
-    }),
-    onSave: async (id, data) => {
-      try {
-        setLoading(true);
-        await driverApi.updateDriver(id, data);
-        await fetchDrivers();
-      } catch (error) {
-        console.error('Error saving driver:', error);
-        alert('Lỗi khi lưu tài xế');
-        throw error;
-      } finally {
-        setLoading(false);
-      }
-    },
-    confirmSaveOutside: () => 'Bạn có muốn lưu thay đổi trước khi thoát?',
-    confirmSaveShortcut: () => 'Bạn có muốn lưu các thay đổi?',
-  });
-
-  const handleQuickStatusChange = async (record, value) => {
-    const previousStatus = record.status;
-    if (previousStatus === value) return;
-
-    try {
-      setLoading(true);
-      const payload = {
-        name: record.name,
-        licenseNumber: record.licenseNumber,
-        phone: record.phone,
-        status: value,
-      };
-      await driverApi.updateDriver(record._id, payload);
-
-      setDrivers((prev) =>
-        prev.map((driver) =>
-          driver._id === record._id ? { ...driver, status: value } : driver
-        )
-      );
-
-      if (editingRowId === record._id) {
-        setEditedRowData((prev) => ({ ...prev, status: value }));
-        setOriginalRowData((prev) => ({ ...prev, status: value }));
-      }
-    } catch (error) {
-      console.error('Error updating driver status:', error);
-      alert('Lỗi khi lưu tài xế');
-      setDrivers((prev) =>
-        prev.map((driver) =>
-          driver._id === record._id ? { ...driver, status: previousStatus } : driver
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Card className="module-card">
@@ -159,55 +107,32 @@ function DriversPage() {
           {'Thêm tài xế'}
         </Button>
       </Flex>
-      <div ref={containerRef}>
       <Table
         rowKey="_id"
         dataSource={drivers}
         loading={loading}
         pagination={{ pageSize: 8 }}
-        scroll={{ x: 780 }}
         rowSelection={rowSelection}
-        onRow={(record) => ({
-          onDoubleClick: () => handleEnterEdit(record),
-        })}
         columns={[
           {
             title: 'Tên',
             dataIndex: 'name',
-            render: (text, record) => (
-              editingRowId === record._id
-                ? <Input value={editedRowData.name} onChange={(e) => setEditedRowData(prev => ({ ...prev, name: e.target.value }))} />
-                : text
-            ),
           },
           {
             title: 'Bằng lái',
             dataIndex: 'licenseNumber',
-            render: (text, record) => (
-              editingRowId === record._id
-                ? <Input value={editedRowData.licenseNumber} onChange={(e) => setEditedRowData(prev => ({ ...prev, licenseNumber: e.target.value }))} />
-                : text
-            ),
           },
           {
             title: 'Số điện thoại',
             dataIndex: 'phone',
-            render: (text, record) => (
-              editingRowId === record._id
-                ? <Input value={editedRowData.phone} onChange={(e) => setEditedRowData(prev => ({ ...prev, phone: e.target.value }))} />
-                : text
-            ),
           },
           {
-            title: 'Trạng thái',
-            dataIndex: 'status',
-            render: (status, record) => (
-              <Select
-                value={editingRowId === record._id ? editedRowData.status : status}
-                onChange={(value) => handleQuickStatusChange(record, value)}
-                style={{ width: 140 }}
-                options={Object.keys(driverStatusColor).map((key) => ({ value: key, label: key === 'available' ? 'Sẵn sàng' : key === 'on_trip' ? 'Đang chuyến' : key === 'off' ? 'Nghỉ' : key }))}
-              />
+            title: 'Hành động',
+            key: 'actions',
+            render: (_, record) => (
+              <Button size="small" onClick={() => handleEditDriver(record)}>
+                {'Sửa'}
+              </Button>
             ),
           },
         ]}
@@ -217,13 +142,12 @@ function DriversPage() {
         onClick={handleDeleteSelected}
         label="Xóa tài xế"
       />
-      </div>
       <Modal
-        title={'Thêm tài xế'}
+        title={modalMode === 'edit' ? 'Chỉnh sửa tài xế' : 'Thêm tài xế'}
         open={isAddModalOpen}
-        onOk={handleCreateDriver}
+        onOk={handleSubmitDriver}
         onCancel={handleCloseAddModal}
-        okText={'Lưu'}
+        okText={modalMode === 'edit' ? 'Cập nhật' : 'Lưu'}
         cancelText={'Hủy'}
         confirmLoading={creatingDriver}
         destroyOnHidden
@@ -251,19 +175,6 @@ function DriversPage() {
             rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
           >
             <Input />
-          </Form.Item>
-
-          <Form.Item
-            label={'Trạng thái'}
-            name="status"
-            rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
-          >
-            <Select
-              options={Object.keys(driverStatusColor).map((key) => ({
-                value: key,
-                label: key === 'available' ? 'Sẵn sàng' : key === 'on_trip' ? 'Đang chuyến' : key === 'off' ? 'Nghỉ' : key,
-              }))}
-            />
           </Form.Item>
         </Form>
       </Modal>

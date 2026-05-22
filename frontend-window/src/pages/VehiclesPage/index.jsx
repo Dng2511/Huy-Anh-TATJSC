@@ -1,10 +1,11 @@
-import { Badge, Card, Col, Empty, Row, Table, Typography, message } from 'antd'
+import { Badge, Card, Col, Empty, Modal, Row, Select, Table, Typography, message } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import formatLicensePlate from '../../utils/formatLicensePlate'
 import { getGpsStatus, getMarkerColors } from '../../utils/gpsHelpers'
 import { createGateSquareIcon } from '../../utils/mapIcons'
 import { fitMapToCoordinates, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../utils/mapHelpers'
+import driverApi from '../../services/Api/driverApi'
 import gateApi from '../../services/Api/gateApi'
 import vehicleApi from '../../services/Api/vehicleApi'
 import useBulkRowDelete from '../../hooks/useBulkRowDelete'
@@ -71,9 +72,13 @@ function VehicleMapController({ vehicles, gates, selectedVehicle }) {
 function VehiclesPage() {
   const [vehicles, setVehicles] = useState([])
   const [gates, setGates] = useState([])
+  const [drivers, setDrivers] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedVehicle, setSelectedVehicle] = useState(null)
+  const [updatingVehicleId, setUpdatingVehicleId] = useState(null)
   const markerRefs = useRef({})
+
+  const getVehicleDriverId = (vehicle) => vehicle?.driver?._id || vehicle?.driver || null
 
   const fetchGates = async () => {
     try {
@@ -82,6 +87,17 @@ function VehiclesPage() {
       setGates(gateList)
     } catch (error) {
       console.error('Error fetching gates:', error)
+    }
+  }
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await driverApi.getDrivers()
+      const driverList = Array.isArray(response) ? response : response?.data || []
+      setDrivers(driverList)
+    } catch (error) {
+      console.error('Error fetching drivers:', error)
+      message.error('Lỗi khi tải danh sách tài xế')
     }
   }
 
@@ -100,7 +116,7 @@ function VehiclesPage() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      await Promise.all([fetchVehicles(), fetchGates()])
+      await Promise.all([fetchVehicles(), fetchGates(), fetchDrivers()])
     }
 
     fetchAll()
@@ -132,6 +148,41 @@ function VehiclesPage() {
     confirmOkText: 'Xóa',
     confirmCancelText: 'Hủy',
   })
+
+  const handleChangeVehicleDriver = (vehicle, nextDriverId) => {
+    const currentDriverId = getVehicleDriverId(vehicle)
+    const normalizedNextDriverId = nextDriverId || null
+
+    if (String(normalizedNextDriverId || '') === String(currentDriverId || '')) {
+      return
+    }
+
+    const conflictingVehicle = normalizedNextDriverId
+      ? vehicles.find((item) => String(getVehicleDriverId(item) || '') === String(normalizedNextDriverId) && item._id !== vehicle._id)
+      : null
+
+    Modal.confirm({
+      title: 'Xác nhận thay đổi tài xế',
+      content: conflictingVehicle
+        ? `Tài xế này đang được gán cho xe ${formatLicensePlate(conflictingVehicle.licensePlate)}. Khi tiếp tục, hệ thống có thể đổi 2 tài xế cho nhau. Bạn có chắc chắn muốn đổi?`
+        : 'Bạn có muốn thay đổi tài xế cho phương tiện này?',
+      okText: 'Đổi',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        setUpdatingVehicleId(vehicle._id)
+        try {
+          await vehicleApi.updateVehicle(vehicle._id, { driver: normalizedNextDriverId })
+          message.success('Đã cập nhật tài xế cho phương tiện')
+          await fetchVehicles()
+        } catch (error) {
+          console.error('Error updating vehicle driver:', error)
+          message.error('Lỗi khi cập nhật tài xế cho phương tiện')
+        } finally {
+          setUpdatingVehicleId(null)
+        }
+      },
+    })
+  }
 
   return (
     <Card className="module-card vehicles-page-card">
@@ -170,6 +221,31 @@ function VehiclesPage() {
                   render: (licensePlate) => formatLicensePlate(licensePlate),
                 },
                 {
+                  title: 'Tài xế',
+                  key: 'driver',
+                  width: 180,
+                  render: (_, record) => (
+                    <div onClick={(event) => event.stopPropagation()}>
+                      <Select
+                        size="small"
+                        style={{ width: '100%' }}
+                        value={getVehicleDriverId(record) || undefined}
+                        placeholder="Chọn tài xế"
+                        allowClear
+                        showSearch
+                        optionFilterProp="label"
+                        loading={updatingVehicleId === record._id}
+                        disabled={updatingVehicleId === record._id}
+                        options={drivers.map((driver) => ({
+                          value: driver._id,
+                          label: driver.name,
+                        }))}
+                        onChange={(value) => handleChangeVehicleDriver(record, value)}
+                      />
+                    </div>
+                  ),
+                },
+                {
                   title: 'Địa chỉ GPS',
                   dataIndex: ['tracking', 'address'],
                   width: 200,
@@ -194,7 +270,7 @@ function VehiclesPage() {
                   render: (_, record) => getGpsStatus(record),
                 },
               ]}
-              scroll={{ x: 760 }}
+              scroll={{ x: 900 }}
             />
             <BulkDeleteButton
               selectedRowKeys={selectedRowKeys}

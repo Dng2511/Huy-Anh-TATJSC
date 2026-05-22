@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ConfigProvider, Modal } from 'antd'
 import { useAuth } from '../context/AuthContext'
 import LoginPage from '../pages/Auth/LoginPage'
@@ -11,14 +11,20 @@ import OrdersPage from '../pages/OrdersPage'
 import UsersPage from '../pages/UsersPage'
 import VehiclesPage from '../pages/VehiclesPage'
 import PartnersPage from '../pages/PartnersPage'
+import AuditLogsPage from '../pages/AuditLogsPage'
 
 function AppView() {
   const { user, loading } = useAuth()
   const [activePage, setActivePage] = useState('dashboard')
   const [hasPartnersUnsavedChanges, setHasPartnersUnsavedChanges] = useState(false)
+  const canViewUsers = user?.role === 'admin'
 
   const requestPageChange = (nextPage) => {
     if (nextPage === activePage) {
+      return
+    }
+
+    if (nextPage === 'users' && !canViewUsers) {
       return
     }
 
@@ -42,6 +48,12 @@ function AppView() {
 
     setActivePage(nextPage)
   }
+
+  useEffect(() => {
+    if (activePage === 'users' && !canViewUsers) {
+      setActivePage('dashboard')
+    }
+  }, [activePage, canViewUsers])
 
   const renderPageContent = () => {
     switch (activePage) {
@@ -69,6 +81,28 @@ function AppView() {
         return (
           <PartnersPage
             onDirtyChange={setHasPartnersUnsavedChanges}
+          />
+        )
+      case 'users':
+        return canViewUsers ? <UsersPage /> : (
+          <DashboardPage
+            metrics={metrics}
+            trackingVehicles={trackingVehicles}
+            menuItems={menuItems}
+            pageMeta={pageMeta}
+            formatCurrency={formatCurrency}
+            onNavigate={(key) => requestPageChange(key)}
+          />
+        )
+      case 'audit':
+        return canViewUsers ? <AuditLogsPage /> : (
+          <DashboardPage
+            metrics={metrics}
+            trackingVehicles={trackingVehicles}
+            menuItems={menuItems}
+            pageMeta={pageMeta}
+            formatCurrency={formatCurrency}
+            onNavigate={(key) => requestPageChange(key)}
           />
         )
       default:
@@ -127,6 +161,10 @@ function AppView() {
       title: 'Người dùng',
       description: '',
     },
+    audit: {
+      title: 'Lịch sử thao tác',
+      description: '',
+    },
   }), [])
 
   const menuItems = useMemo(
@@ -140,9 +178,9 @@ function AppView() {
       { key: 'costs', label: 'Chi phí' },
       { key: 'billing', label: 'Thanh toán' },
       { key: 'reports', label: 'Báo cáo' },
-      { key: 'users', label: 'Người dùng' },
+      ...(canViewUsers ? [{ key: 'users', label: 'Người dùng' }, { key: 'audit', label: 'Lịch sử thao tác' }] : []),
     ],
-    []
+    [canViewUsers]
   )
 
   const metrics = useMemo(() => ({

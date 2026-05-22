@@ -13,7 +13,9 @@ const driverRoutes = require('./routes/driverRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const gateRoutes = require('./routes/gateRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
+const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use('/api/drivers', driverRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/gates', gateRoutes);
 app.use('/api/partners', partnerRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/audit', auditRoutes);
 
 // 404 handler
 app.use((req, res) => {

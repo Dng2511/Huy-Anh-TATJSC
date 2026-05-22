@@ -8,6 +8,6 @@ const { checkUser } = require('../middleware/checkUser');
 router.post('/', checkUser, validateVehicle, vehicleController.createVehicle);
 router.get('/', vehicleController.getAllVehicles);
 router.get('/:id', vehicleController.getVehicleById);
-router.put('/:id', checkUser, validateVehicle, vehicleController.updateVehicle);
+router.put('/:id', checkUser, vehicleController.updateVehicle);
 router.delete('/', checkUser, vehicleController.deleteVehicles);
 module.exports = router;

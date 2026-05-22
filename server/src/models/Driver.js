@@ -19,12 +19,7 @@ const driverSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       uppercase: true,
-    },
-    status: {
-      type: String,
-      enum: ['available', 'on_trip', 'off'],
-      default: 'available',
-    },
+    }
   },
   {
     timestamps: true,

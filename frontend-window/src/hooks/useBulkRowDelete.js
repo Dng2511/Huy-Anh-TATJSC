@@ -21,6 +21,7 @@ function useBulkRowDelete({
                 setSelectedRowKeys(newSelectedRowKeys);
             },
             hideSelectAll: true,
+            preserveSelectedRowKeys: true,
         }),
         [selectedRowKeys],
     );

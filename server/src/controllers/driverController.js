@@ -3,7 +3,7 @@ const Driver = require('../models/Driver');
 // Create a new driver
 exports.createDriver = async (req, res) => {
   try {
-    const {name, phone, licenseNumber, status } = req.body;
+    const {name, phone, licenseNumber} = req.body;
 
     const existingDriver = await Driver.findOne({
       licenseNumber
@@ -19,7 +19,6 @@ exports.createDriver = async (req, res) => {
       name,
       phone,
       licenseNumber,
-      status,
     });
 
     await driver.save();
@@ -35,13 +34,6 @@ exports.getAllDrivers = async (req, res) => {
     const filters = {};
     if (req.query.name) {
       filters.name = { $regex: req.query.name, $options: 'i' };
-    }
-    if (req.query.status) {
-      const statuses = req.query.status.split(',');
-
-      filters.status = {
-        $in: statuses,
-      };
     }
     const drivers = await Driver.find(filters).sort({ createdAt: -1 });
     res.status(200).json(drivers);
@@ -68,11 +60,11 @@ exports.getDriverById = async (req, res) => {
 // Update a driver
 exports.updateDriver = async (req, res) => {
   try {
-    const {name, phone, licenseNumber, status } = req.body;
+    const {name, phone, licenseNumber} = req.body;
 
     const driver = await Driver.findByIdAndUpdate(
       req.params.id,
-      { name, phone, licenseNumber, status },
+      { name, phone, licenseNumber },
       { new: true, runValidators: true }
     );
 
