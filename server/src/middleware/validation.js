@@ -199,6 +199,27 @@ const userUpdateSchema = Joi.object({
   role: Joi.string().valid('admin', 'user').optional(),
 }).min(1);
 
+const updateFeeSchema = Joi.object({
+    dieselFees: Joi.array().items(
+        Joi.object({
+            date: Joi.date().required(),
+            vehicle: Joi.string().required(),
+            quantity: Joi.number().positive().required(),
+            unitPrice: Joi.number().positive().required(),
+            amount: Joi.number().positive().required(),
+        })
+    ),
+    otherFees: Joi.array().items(
+        Joi.object({
+            date: Joi.date().required(),
+            vehicle: Joi.string().required(),
+            name: Joi.string().required(),
+            amount: Joi.number().positive().required(),
+        })
+    ),
+});
+
+
 
 // Validation middleware factory
 const validate = (schema) => (req, res, next) => {
