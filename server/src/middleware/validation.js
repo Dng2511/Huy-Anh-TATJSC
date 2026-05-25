@@ -152,6 +152,8 @@ const orderSchema = Joi.object({
         )
         .default('planned'),
 
+  orderDate: Joi.date().optional().allow(null),
+
     cost: Joi.number().min(0).default(0),
 
     waitingCost: Joi.number().min(0).default(0),
@@ -217,6 +219,9 @@ const updateFeeSchema = Joi.object({
             amount: Joi.number().positive().required(),
         })
     ),
+        totalDieselFee: Joi.number().min(0),
+        totalOtherFee: Joi.number().min(0),
+        totalAmount: Joi.number().min(0),
 });
 
 
@@ -251,4 +256,5 @@ module.exports = {
   validateLogin: validate(loginSchema),
   validateUserCreate: validate(userCreateSchema),
   validateUserUpdate: validate(userUpdateSchema),
+  validateFee: validate(updateFeeSchema),
 };

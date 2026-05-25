@@ -1,5 +1,5 @@
 import { Badge, Card, Select, Table, Tag, Typography, message, Pagination, Col, Row, Button, Drawer, Descriptions } from 'antd'
-import { ArrowRightOutlined } from '@ant-design/icons';import { useEffect, useRef, useState } from 'react'
+import { ArrowRightOutlined } from '@ant-design/icons';import { useEffect, useMemo, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import formatLicensePlate from '../../utils/formatLicensePlate'
 import { getGpsStatus, getMarkerColors } from '../../utils/gpsHelpers'
@@ -84,6 +84,41 @@ function OrdersPage() {
   const [vehicles, setVehicles] = useState([])
   const [vehicleLocation, setVehicleLocation] = useState(null)
   const [routeCoords, setRouteCoords] = useState(null)
+
+  const selectedOrderCoordinates = useMemo(() => {
+    if (!selectedOrder) return []
+
+    const coords = []
+    const pickupGate = gates.find((g) => g._id === selectedOrder.pickup?._id)
+    const deliveryGate = gates.find((g) => g._id === selectedOrder.delivery?._id)
+
+    if (pickupGate?.locate?.lat && pickupGate?.locate?.lng) {
+      coords.push({ lat: Number(pickupGate.locate.lat), lng: Number(pickupGate.locate.lng) })
+    }
+    if (deliveryGate?.locate?.lat && deliveryGate?.locate?.lng) {
+      coords.push({ lat: Number(deliveryGate.locate.lat), lng: Number(deliveryGate.locate.lng) })
+    }
+
+    return coords
+  }, [gates, selectedOrder])
+
+  const allMapCoordinates = useMemo(() => {
+    const coords = []
+
+    gates.forEach((g) => {
+      const lat = Number(g?.locate?.lat)
+      const lng = Number(g?.locate?.lng)
+      if (Number.isFinite(lat) && Number.isFinite(lng)) coords.push({ lat, lng })
+    })
+
+    vehicles.forEach((v) => {
+      const lat = Number(v?.tracking?.lat)
+      const lng = Number(v?.tracking?.lng)
+      if (Number.isFinite(lat) && Number.isFinite(lng)) coords.push({ lat, lng })
+    })
+
+    return coords
+  }, [gates, vehicles])
 
   const fetchGates = async () => {
     try {
@@ -299,38 +334,6 @@ function OrdersPage() {
   const handleRowClick = (record) => {
     setSelectedOrder(record)
   }
-
-
-
-  const getOrderCoordinates = () => {
-    const coords = []
-    const pickupGate = gates.find((g) => g._id === selectedOrder?.pickup?._id)
-    const deliveryGate = gates.find((g) => g._id === selectedOrder?.delivery?._id)
-
-    if (pickupGate?.locate?.lat && pickupGate?.locate?.lng) {
-      coords.push({ lat: Number(pickupGate.locate.lat), lng: Number(pickupGate.locate.lng) })
-    }
-    if (deliveryGate?.locate?.lat && deliveryGate?.locate?.lng) {
-      coords.push({ lat: Number(deliveryGate.locate.lat), lng: Number(deliveryGate.locate.lng) })
-    }
-    return coords
-  }
-
-  const getAllCoordinates = () => {
-    const coords = []
-    gates.forEach((g) => {
-      const lat = Number(g?.locate?.lat)
-      const lng = Number(g?.locate?.lng)
-      if (Number.isFinite(lat) && Number.isFinite(lng)) coords.push({ lat, lng })
-    })
-    vehicles.forEach((v) => {
-      const lat = Number(v?.tracking?.lat)
-      const lng = Number(v?.tracking?.lng)
-      if (Number.isFinite(lat) && Number.isFinite(lng)) coords.push({ lat, lng })
-    })
-    return coords
-  }
-
   return (
     <Card className="module-card orders-page-card">
       <Row gutter={[16, 16]} align="stretch">
@@ -507,7 +510,7 @@ function OrdersPage() {
               />
 
               <OrderMapController
-                coordinates={selectedOrder ? getOrderCoordinates() : getAllCoordinates()}
+                coordinates={selectedOrder ? selectedOrderCoordinates : allMapCoordinates}
                 selectedOrder={selectedOrder}
               />
 

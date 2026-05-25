@@ -36,6 +36,10 @@ const orderSchema = new mongoose.Schema(
             enum: ['planned', 'running', 'waiting' ,'delivering', 'completed', 'cancelled'],
             default: 'planned'
         },
+        orderDate: {
+            type: Date,
+            default: Date.now,
+        },
         cost: {
             type: Number,
             default: 0

@@ -34,7 +34,19 @@ const feeSchema = new mongoose.Schema(
                 name: String,
                 amount: Number,
             }
-        ]
+        ],
+        totalDieselFee: {
+            type: Number,
+            default: 0,
+        },
+        totalOtherFee: {
+            type: Number,
+            default: 0,
+        },
+        totalAmount: {
+            type: Number,
+            default: 0,
+        }
     },
     {
         timestamps: true,

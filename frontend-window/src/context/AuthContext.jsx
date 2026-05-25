@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 
 const AuthContext = createContext(null)
 
@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (username, password) => {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' })
+      await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' })
     } catch (e) {}
     persistAccessToken(null)
     setUser(null)
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
+      const res = await fetch(`${API_BASE}/auth/refresh`, { method: 'POST', credentials: 'include' })
       if (!res.ok) {
         persistAccessToken(null)
         setUser(null)

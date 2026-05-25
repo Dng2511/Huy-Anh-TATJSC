@@ -1,0 +1,176 @@
+.fee-page-card {
+  min-height: calc(100vh - 200px);
+}
+
+.fee-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.fee-page-title.ant-typography {
+  margin: 0;
+}
+
+.fee-page-subtitle {
+  display: block;
+  color: #4a5d5a;
+  margin-top: 6px;
+}
+
+.fee-current-tag {
+  margin-inline-end: 0;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.fee-year-tab-label,
+.fee-month-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fee-year-tabs > .ant-tabs-nav {
+  margin-bottom: 18px;
+}
+
+.fee-month-tabs > .ant-tabs-nav {
+  margin-bottom: 14px;
+}
+
+.fee-month-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.fee-month-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.fee-month-title.ant-typography {
+  margin: 0;
+}
+
+.fee-month-subtitle {
+  display: block;
+  color: #4a5d5a;
+  margin-top: 6px;
+}
+
+.fee-month-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.fee-table-actions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+}
+
+.fee-page-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 74, 70, 0.12);
+}
+
+.fee-page-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fee-page-footer-hint {
+  color: #4a5d5a;
+}
+
+.fee-status-pill {
+  margin-inline-end: 0;
+  align-self: center;
+}
+
+.fee-stat-card {
+  border: 1px solid rgba(15, 74, 70, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+}
+
+.fee-stat-card .ant-statistic-title {
+  font-weight: 600;
+  color: #4a5d5a;
+}
+
+.fee-stat-card .ant-statistic-content {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.65rem;
+  color: #0f302d;
+}
+
+.fee-stat-card-total {
+  background: linear-gradient(160deg, rgba(14, 107, 99, 0.1), rgba(250, 196, 78, 0.18));
+}
+
+.fee-section-card {
+  border: 1px solid rgba(15, 74, 70, 0.12);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
+}
+
+.fee-loading-state,
+.fee-empty-state {
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fee-alert {
+  margin-bottom: 16px;
+}
+
+.fee-reload-tag {
+  margin-inline-end: 0;
+  cursor: pointer;
+}
+
+.fee-inline-dirty,
+.fee-row-dirty td {
+  background: #fffbe6 !important;
+}
+
+.fee-inline-dirty.ant-select,
+.fee-inline-dirty.ant-input,
+.fee-inline-dirty.ant-input-number {
+  border-color: #ffd666;
+}
+
+@media (max-width: 768px) {
+  .fee-page-header,
+  .fee-month-toolbar,
+  .fee-page-footer {
+    align-items: stretch;
+  }
+
+  .fee-stat-card .ant-statistic-content {
+    font-size: 1.35rem;
+  }
+}

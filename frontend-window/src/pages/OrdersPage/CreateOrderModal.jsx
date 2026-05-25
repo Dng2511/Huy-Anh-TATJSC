@@ -1,4 +1,4 @@
-import { Modal, Select, InputNumber, Checkbox, message } from 'antd'
+import { Modal, Select, InputNumber, Checkbox, Input, message } from 'antd'
 import { useEffect, useState } from 'react'
 import orderApi from '../../services/Api/orderApi'
 import partnerApi from '../../services/Api/partnerApi'
@@ -6,6 +6,13 @@ import gateApi from '../../services/Api/gateApi'
 import vehicleApi from '../../services/Api/vehicleApi'
 import driverApi from '../../services/Api/driverApi'
 import formatLicensePlate from '../../utils/formatLicensePlate'
+
+const toDateInputValue = (value) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toISOString().slice(0, 10)
+}
 
 export default function CreateOrderModal({ visible, onCancel, onCreated, initialParams }) {
     const [partnerId, setPartnerId] = useState(null)
@@ -16,6 +23,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     const [isReefer, setIsReefer] = useState(true)
     const [cost, setCost] = useState(0)
     const [waitingCost, setWaitingCost] = useState(0)
+    const [orderDate, setOrderDate] = useState(toDateInputValue(new Date()))
     const [partners, setPartners] = useState([])
     const [gates, setGates] = useState([])
     const [vehicles, setVehicles] = useState([])
@@ -98,6 +106,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             isReefer: Boolean(isReefer),
             cost: Number(cost) || 0,
             waitingCost: Number(waitingCost) || 0,
+            orderDate: orderDate || undefined,
             status: status || 'planned',
         }
 
@@ -129,6 +138,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             setIsReefer(false)
             setCost(0)
             setWaitingCost(0)
+            setOrderDate(toDateInputValue(new Date()))
             setStatus('planned')
             onCreated && onCreated()
         } catch (err) {
@@ -148,6 +158,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             setIsReefer(Boolean(initialParams.isReefer))
             setCost(Number(initialParams.cost) || 0)
             setWaitingCost(Number(initialParams.waitingCost) || 0)
+            setOrderDate(toDateInputValue(initialParams.orderDate || initialParams.createdAt || new Date()))
             setStatus(initialParams.status || 'planned')
         }
         if (!visible && !initialParams) {
@@ -160,6 +171,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             setIsReefer(false)
             setCost(0)
             setWaitingCost(0)
+            setOrderDate(toDateInputValue(new Date()))
             setStatus('planned')
         }
     }, [visible, initialParams])
@@ -217,6 +229,16 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Checkbox checked={isReefer} onChange={(e) => setIsReefer(e.target.checked)}>Xe có lạnh (Reefer)</Checkbox>
+                </div>
+
+                <div>
+                    <div style={{ marginBottom: 6, fontWeight: 500 }}>Ngày đơn</div>
+                    <Input
+                        type="date"
+                        value={orderDate}
+                        onChange={(e) => setOrderDate(e.target.value)}
+                        style={{ width: '100%' }}
+                    />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

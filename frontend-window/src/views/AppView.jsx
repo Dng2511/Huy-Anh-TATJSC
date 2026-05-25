@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConfigProvider, Modal } from 'antd'
 import { useAuth } from '../context/AuthContext'
 import LoginPage from '../pages/Auth/LoginPage'
@@ -7,17 +7,49 @@ import { CreateOrderModalProvider } from '../context/CreateOrderModalContext'
 import DashboardPage from '../pages/DashboardPage'
 import DriversPage from '../pages/DriversPage'
 import GatesPage from '../pages/GatesPage'
+import FeesPage from '../pages/FeesPage'
 import OrdersPage from '../pages/OrdersPage'
 import UsersPage from '../pages/UsersPage'
 import VehiclesPage from '../pages/VehiclesPage'
 import PartnersPage from '../pages/PartnersPage'
 import AuditLogsPage from '../pages/AuditLogsPage'
+import dashboardApi from '../services/Api/dashboardApi'
 
 function AppView() {
   const { user, loading } = useAuth()
   const [activePage, setActivePage] = useState('dashboard')
   const [hasPartnersUnsavedChanges, setHasPartnersUnsavedChanges] = useState(false)
+  const [hasFeesUnsavedChanges, setHasFeesUnsavedChanges] = useState(false)
+  const [dashboardSummary, setDashboardSummary] = useState(null)
+  const [dashboardLoading, setDashboardLoading] = useState(true)
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const [dashboardView, setDashboardView] = useState('year')
+  const [dashboardYear, setDashboardYear] = useState(currentYear)
+  const [dashboardMonth, setDashboardMonth] = useState(currentMonthKey)
+  const previousActivePageRef = useRef(activePage)
   const canViewUsers = user?.role === 'admin'
+  const availableYears = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear])
+
+  const getMonthForYear = (targetYear, currentMonthKeyValue) => `${targetYear}-${String(currentMonthKeyValue).split('-')[1] || '01'}`
+
+  const loadDashboardSummary = async ({ view = dashboardView, year = dashboardYear, month = dashboardMonth } = {}) => {
+    try {
+      setDashboardLoading(true)
+      const summary = await dashboardApi.getSummary({
+        view,
+        year,
+        month,
+      })
+      setDashboardSummary(summary)
+    } catch (error) {
+      console.error('Error loading dashboard summary:', error)
+      setDashboardSummary(null)
+    } finally {
+      setDashboardLoading(false)
+    }
+  }
 
   const requestPageChange = (nextPage) => {
     if (nextPage === activePage) {
@@ -46,6 +78,24 @@ function AppView() {
       return
     }
 
+    if (activePage === 'costs' && hasFeesUnsavedChanges) {
+      Modal.confirm({
+        title: 'Bạn có thay đổi chưa lưu',
+        content: 'Rời trang sẽ mất các thay đổi chưa lưu. Bạn có muốn tiếp tục?',
+        okText: 'Rời trang',
+        cancelText: 'Hủy',
+        okButtonProps: { danger: true },
+        style: {
+          top: 250,
+        },
+        onOk: () => {
+          setHasFeesUnsavedChanges(false)
+          setActivePage(nextPage)
+        },
+      })
+      return
+    }
+
     setActivePage(nextPage)
   }
 
@@ -54,6 +104,20 @@ function AppView() {
       setActivePage('dashboard')
     }
   }, [activePage, canViewUsers])
+
+  useEffect(() => {
+    if (user && activePage === 'dashboard' && previousActivePageRef.current !== 'dashboard') {
+      void loadDashboardSummary()
+    }
+
+    previousActivePageRef.current = activePage
+  }, [activePage, user])
+
+  useEffect(() => {
+    if (user) {
+      void loadDashboardSummary()
+    }
+  }, [user])
 
   const renderPageContent = () => {
     switch (activePage) {
@@ -77,6 +141,8 @@ function AppView() {
           <GatesPage
           />
         )
+      case 'costs':
+        return <FeesPage onDirtyChange={setHasFeesUnsavedChanges} />
       case 'partners':
         return (
           <PartnersPage
@@ -86,34 +152,88 @@ function AppView() {
       case 'users':
         return canViewUsers ? <UsersPage /> : (
           <DashboardPage
-            metrics={metrics}
-            trackingVehicles={trackingVehicles}
+            summary={dashboardSummary}
+            loading={dashboardLoading}
+            view={dashboardView}
+            year={dashboardYear}
+            month={dashboardMonth}
+            availableYears={availableYears}
             menuItems={menuItems}
             pageMeta={pageMeta}
             formatCurrency={formatCurrency}
             onNavigate={(key) => requestPageChange(key)}
+            onChangeView={(nextView) => {
+              setDashboardView(nextView)
+              void loadDashboardSummary({ view: nextView, year: dashboardYear, month: dashboardMonth })
+            }}
+            onChangeYear={(nextYear) => {
+              setDashboardYear(nextYear)
+              const nextMonth = getMonthForYear(nextYear, dashboardMonth)
+              setDashboardMonth(nextMonth)
+              void loadDashboardSummary({ view: dashboardView, year: nextYear, month: nextMonth })
+            }}
+            onChangeMonth={(nextMonth) => {
+              setDashboardMonth(nextMonth)
+              void loadDashboardSummary({ view: dashboardView, year: dashboardYear, month: nextMonth })
+            }}
           />
         )
       case 'audit':
         return canViewUsers ? <AuditLogsPage /> : (
           <DashboardPage
-            metrics={metrics}
-            trackingVehicles={trackingVehicles}
+            summary={dashboardSummary}
+            loading={dashboardLoading}
+            view={dashboardView}
+            year={dashboardYear}
+            month={dashboardMonth}
+            availableYears={availableYears}
             menuItems={menuItems}
             pageMeta={pageMeta}
             formatCurrency={formatCurrency}
             onNavigate={(key) => requestPageChange(key)}
+            onChangeView={(nextView) => {
+              setDashboardView(nextView)
+              void loadDashboardSummary({ view: nextView, year: dashboardYear, month: dashboardMonth })
+            }}
+            onChangeYear={(nextYear) => {
+              setDashboardYear(nextYear)
+              const nextMonth = getMonthForYear(nextYear, dashboardMonth)
+              setDashboardMonth(nextMonth)
+              void loadDashboardSummary({ view: dashboardView, year: nextYear, month: nextMonth })
+            }}
+            onChangeMonth={(nextMonth) => {
+              setDashboardMonth(nextMonth)
+              void loadDashboardSummary({ view: dashboardView, year: dashboardYear, month: nextMonth })
+            }}
           />
         )
       default:
         return (
           <DashboardPage
-            metrics={metrics}
-            trackingVehicles={trackingVehicles}
+            summary={dashboardSummary}
+            loading={dashboardLoading}
+            view={dashboardView}
+            year={dashboardYear}
+            month={dashboardMonth}
+            availableYears={availableYears}
             menuItems={menuItems}
             pageMeta={pageMeta}
             formatCurrency={formatCurrency}
             onNavigate={(key) => requestPageChange(key)}
+            onChangeView={(nextView) => {
+              setDashboardView(nextView)
+              void loadDashboardSummary({ view: nextView, year: dashboardYear, month: dashboardMonth })
+            }}
+            onChangeYear={(nextYear) => {
+              setDashboardYear(nextYear)
+              const nextMonth = getMonthForYear(nextYear, dashboardMonth)
+              setDashboardMonth(nextMonth)
+              void loadDashboardSummary({ view: dashboardView, year: nextYear, month: nextMonth })
+            }}
+            onChangeMonth={(nextMonth) => {
+              setDashboardMonth(nextMonth)
+              void loadDashboardSummary({ view: dashboardView, year: dashboardYear, month: nextMonth })
+            }}
           />
         )
     }
@@ -182,15 +302,6 @@ function AppView() {
     ],
     [canViewUsers]
   )
-
-  const metrics = useMemo(() => ({
-    totalOrdersToday: 0,
-    activeVehicles: 0,
-    deliveringOrders: 0,
-    revenueToday: 0,
-  }), [])
-
-  const trackingVehicles = useMemo(() => [], [])
 
   const formatCurrency = (value) => {
     try {

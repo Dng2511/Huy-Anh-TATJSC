@@ -14,6 +14,8 @@ const orderRoutes = require('./routes/orderRoutes');
 const gateRoutes = require('./routes/gateRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
 const userRoutes = require('./routes/userRoutes');
+const feeRoutes = require('./routes/feeRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const authRoutes = require('./routes/authRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 
@@ -45,6 +47,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/gates', gateRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/fees', feeRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit', auditRoutes);
 
 // 404 handler

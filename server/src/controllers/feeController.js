@@ -1,5 +1,7 @@
 const Fee = require('../models/Fee');
 
+const sumAmounts = (items = []) => items.reduce((total, item) => total + (Number(item?.amount) || 0), 0);
+
 exports.getFee = async (req, res) => {
     try {
         const month = req.params.month;
@@ -8,7 +10,14 @@ exports.getFee = async (req, res) => {
         }
         const fee = await Fee.findOne({ month }).populate('dieselFees.vehicle').populate('otherFees.vehicle');
         if (!fee) {
-            const newFee = new Fee({ month, dieselFees: [], otherFees: [] });
+            const newFee = new Fee({
+                month,
+                dieselFees: [],
+                otherFees: [],
+                totalDieselFee: 0,
+                totalOtherFee: 0,
+                totalAmount: 0,
+            });
             await newFee.save();
             return res.json(newFee);
         }
@@ -21,10 +30,20 @@ exports.getFee = async (req, res) => {
 exports.updateFee = async (req, res) => {
     try {
         const month = req.params.month;
-        const {dieselFees, otherFees } = req.body;
+        const { dieselFees = [], otherFees = [] } = req.body;
+        const totalDieselFee = sumAmounts(dieselFees);
+        const totalOtherFee = sumAmounts(otherFees);
+        const totalAmount = totalDieselFee + totalOtherFee;
+
         const fee = await Fee.findOneAndUpdate(
             { month },
-            { dieselFees, otherFees },
+            {
+                dieselFees,
+                otherFees,
+                totalDieselFee,
+                totalOtherFee,
+                totalAmount,
+            },
             { new: true, upsert: true }
         );
         if (!fee) {

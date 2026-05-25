@@ -11,6 +11,7 @@ exports.createOrder = async (req, res) => {
             delivery,
             isReefer,
             status,
+            orderDate,
             cost,
             waitingCost
         } = req.body;
@@ -31,6 +32,7 @@ exports.createOrder = async (req, res) => {
             delivery,
             isReefer,
             status,
+            orderDate,
             cost,
             waitingCost
         });
@@ -279,6 +281,7 @@ exports.updateOrder = async (req, res) => {
             delivery,
             isReefer,
             status,
+            orderDate,
             cost,
             waitingCost
         } = req.body;
@@ -299,6 +302,7 @@ exports.updateOrder = async (req, res) => {
         order.delivery = delivery === undefined ? order.delivery : delivery;
         order.isReefer = isReefer === undefined ? order.isReefer : isReefer;
         order.status = newStatus;
+        order.orderDate = orderDate === undefined ? order.orderDate : orderDate;
         order.cost = cost === undefined ? order.cost : cost;
         order.waitingCost = waitingCost === undefined ? order.waitingCost : waitingCost;
 

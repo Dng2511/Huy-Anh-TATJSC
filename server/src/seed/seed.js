@@ -15,6 +15,11 @@ function sample(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function buildSeedOrderDate(index) {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() - index, randInt(1, 25), 12, 0, 0, 0);
+}
+
 const N_GATES = 6;
 const N_PARTNERS = 4;
 const N_DRIVERS = 8;
@@ -380,6 +385,7 @@ async function seed() {
         delivery: deliveryGate,
         isReefer: Math.random() < 0.2,
         status: sample(orderStatuses),
+        orderDate: buildSeedOrderDate(i),
         cost: randInt(200, 2000),
         waitingCost: randInt(0, 200),
       });
