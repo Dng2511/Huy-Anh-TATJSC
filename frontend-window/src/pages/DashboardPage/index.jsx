@@ -43,13 +43,19 @@ function LineChartCard({ title, subtitle, labels, seriesList, valueFormatter, em
     data: chartData,
     xField: 'monthLabel',
     yField: 'value',
-    seriesField: 'seriesLabel',
+    seriesField: 'series',
+    colorField: 'series',
     smooth: true,
-    color: ({ seriesLabel }) => (seriesLabel === 'Doanh thu' ? '#0e6b63' : '#1677ff'),
+    color: seriesList.map((s) => s?.color || '#0e6b63'),
     scale: {
       color: {
-        range: ['#0e6b63', '#1677ff'],
+        range: seriesList.map((s) => s?.color || '#0e6b63'),
       },
+    },
+    lineStyle: (datum) => {
+      const seriesLabel = typeof datum === 'string' ? datum : (datum?.series || datum?.seriesLabel || datum?.name)
+      const series = seriesList.find((s) => s.label === seriesLabel)
+      return { stroke: series?.color || '#0e6b63', lineWidth: 2 }
     },
     point: {
       size: 5,
@@ -74,9 +80,7 @@ function LineChartCard({ title, subtitle, labels, seriesList, valueFormatter, em
         labelFormatter: (value) => formatAxisCurrency(value),
       },
     },
-    legend: {
-      position: 'top',
-    },
+    legend: false,
     interactions: [{ type: 'element-active' }],
     onReady: (plot) => {
       plot.on('element:click', (event) => {
@@ -98,22 +102,21 @@ function LineChartCard({ title, subtitle, labels, seriesList, valueFormatter, em
           <Title level={5} className="dashboard-chart-title">{title}</Title>
           <Text className="dashboard-chart-subtitle">{subtitle}</Text>
         </div>
-        <div className="dashboard-chart-legend">
-          {seriesList.map((series) => (
-            <span key={series.label} className="dashboard-chart-legend-item">
-              <span className="dashboard-chart-legend-dot" style={{ backgroundColor: series.color }} />
-              {series.label}
-            </span>
-          ))}
-        </div>
       </div>
 
       {labels.length === 0 ? (
         <Empty description={emptyText} />
       ) : (
         <div className="dashboard-line-chart-wrap">
-          
           <Line {...lineConfig} />
+          <div className="dashboard-chart-legend dashboard-chart-legend-below">
+            {seriesList.map((series) => (
+              <span key={series.label} className="dashboard-chart-legend-item">
+                <span className="dashboard-chart-legend-dot" style={{ backgroundColor: series.color }} />
+                {series.label}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </Card>
