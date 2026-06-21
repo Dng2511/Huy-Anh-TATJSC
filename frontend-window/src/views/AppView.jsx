@@ -269,14 +269,6 @@ function AppView() {
       title: 'Chi phí',
       description: '',
     },
-    billing: {
-      title: 'Thanh toán',
-      description: '',
-    },
-    reports: {
-      title: 'Báo cáo',
-      description: '',
-    },
     users: {
       title: 'Người dùng',
       description: '',
@@ -296,8 +288,6 @@ function AppView() {
       { key: 'partners', label: 'Đối tác' },
       { key: 'gates', label: 'Cửa khẩu' },
       { key: 'costs', label: 'Chi phí' },
-      { key: 'billing', label: 'Thanh toán' },
-      { key: 'reports', label: 'Báo cáo' },
       ...(canViewUsers ? [{ key: 'users', label: 'Người dùng' }, { key: 'audit', label: 'Lịch sử thao tác' }] : []),
     ],
     [canViewUsers]
