@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       await login(values.username, values.password)
     } catch (err) {
-      notification.error({ message: 'Đăng nhập thất bại', description: err.message })
+      notification.error({ message: 'Đăng nhập thất bại', description: err.message === 'Invalid credentials' ? 'Tên đăng nhập hoặc mật khẩu không đúng' : 'Đã xảy ra lỗi, vui lòng thử lại sau' })
     } finally {
       setLoading(false)
     }

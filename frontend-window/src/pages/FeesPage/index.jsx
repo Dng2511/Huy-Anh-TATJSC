@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Card, Col, Empty, Input, InputNumber, Row, Select, Spin, Statistic, Table, Tabs, Tag, Typography, message } from 'antd'
+import { Alert, Button, Card, Col, Input, InputNumber, Row, Select, Spin, Statistic, Table, Tabs, Tag, Typography, message } from 'antd'
 import feeApi from '../../services/Api/feeApi'
 import vehicleApi from '../../services/Api/vehicleApi'
 import './FeesPage.css'
@@ -188,6 +188,7 @@ function FeeMonthPanel({
 }) {
   const dieselRows = fee?.dieselFees || []
   const otherRows = fee?.otherFees || []
+  const isEmptyMonth = !dieselRows.length && !otherRows.length
   const dirty = isMonthDirty(originalFee, fee)
   const dieselTotal = useMemo(() => sumAmounts(dieselRows), [dieselRows])
   const otherTotal = useMemo(() => sumAmounts(otherRows), [otherRows])
@@ -364,10 +365,6 @@ function FeeMonthPanel({
     )
   }
 
-  if (!dieselRows.length && !otherRows.length) {
-    return <Empty className="fee-empty-state" description="Chưa có dữ liệu chi phí cho tháng này" />
-  }
-
   return (
     <div className="fee-month-panel">
       <div className="fee-month-toolbar">
@@ -384,6 +381,16 @@ function FeeMonthPanel({
           </Tag>
         </div>
       </div>
+
+      {isEmptyMonth ? (
+        <Alert
+          className="fee-alert"
+          type="info"
+          message="Tháng này chưa có dữ liệu chi phí"
+          description="Hệ thống đã tạo sẵn tháng mới. Bạn có thể thêm dòng diesel hoặc chi phí khác ngay bên dưới."
+          showIcon
+        />
+      ) : null}
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
@@ -415,6 +422,7 @@ function FeeMonthPanel({
           pagination={false}
           size="middle"
           scroll={{ x: 980 }}
+          locale={{ emptyText: 'Chưa có dòng diesel nào. Bấm + Thêm dòng diesel để tạo dòng đầu tiên.' }}
           rowSelection={{
             selectedRowKeys: selectedDieselKeys,
             onChange: (keys) => onSelectRowKeys(monthKey, 'diesel', keys),
@@ -444,6 +452,7 @@ function FeeMonthPanel({
           pagination={false}
           size="middle"
           scroll={{ x: 820 }}
+          locale={{ emptyText: 'Chưa có chi phí khác nào. Bấm + Thêm dòng khác để tạo dòng đầu tiên.' }}
           rowSelection={{
             selectedRowKeys: selectedOtherKeys,
             onChange: (keys) => onSelectRowKeys(monthKey, 'other', keys),

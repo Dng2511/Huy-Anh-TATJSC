@@ -44,9 +44,6 @@ function MainLayout({
                 Về Bảng điều khiển
               </Button>
             ) : null}
-            <Button className="header-action-btn" type="default">
-              Xuất báo cáo
-            </Button>
             <LogoutButton />
             <CreateOrderButton setActivePage={setActivePage} />
           </Space>
