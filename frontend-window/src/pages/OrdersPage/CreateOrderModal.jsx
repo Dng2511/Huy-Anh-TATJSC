@@ -31,20 +31,22 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     const [status, setStatus] = useState('planned');
 
     useEffect(() => {
-        if (!partnerId || !pickup || !delivery) {
-            setCost(0)
-            return
-        }
+        if (!initialParams) {
+            if (!partnerId || !pickup || !delivery) {
+                setCost(0)
+                return
+            }
 
-        const partnerObj = partners.find((p) => p._id === partnerId)
-        if (!partnerObj || !Array.isArray(partnerObj.rates)) {
-            setCost(0)
-            return
-        }
+            const partnerObj = partners.find((p) => p._id === partnerId)
+            if (!partnerObj || !Array.isArray(partnerObj.rates)) {
+                setCost(0)
+                return
+            }
 
-        const matched = partnerObj.rates.find((r) => String(r.pickup) === String(pickup) && String(r.delivery) === String(delivery) && Boolean(r.isReefer) === Boolean(isReefer))
-        if (matched) setCost(matched.fixedCost || 0)
-        else setCost(0)
+            const matched = partnerObj.rates.find((r) => String(r.pickup) === String(pickup) && String(r.delivery) === String(delivery) && Boolean(r.isReefer) === Boolean(isReefer))
+            if (matched) setCost(matched.fixedCost || 0)
+            else setCost(0)
+        }
     }, [partnerId, pickup, delivery, isReefer, partners])
 
     // set waiting cost as soon as a partner is selected (partner-level waitingCost)
