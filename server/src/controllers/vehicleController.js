@@ -6,10 +6,10 @@ let lastFetchedAt = 0;
 // Create a new vehicle
 exports.createVehicle = async (req, res) => {
   try {
-    const { id, licensePlate, fuelRate, status } = req.body;
+    const { licensePlate, fuelRate} = req.body;
 
     const existingVehicle = await Vehicle.findOne({
-      $or: [{ id }, { licensePlate }],
+      $or: [{ licensePlate }],
     });
 
     if (existingVehicle) {
@@ -19,10 +19,7 @@ exports.createVehicle = async (req, res) => {
     }
 
     const vehicle = new Vehicle({
-      id,
-      licensePlate,
-      fuelRate,
-      status,
+      licensePlate, fuelRate
     });
 
     cachedTrackingData = null;
@@ -134,38 +131,34 @@ exports.updateVehicle = async (req, res) => {
   try {
     const { licensePlate, fuelRate, status, driver } = req.body;
 
-    const update = {};
-    if (typeof licensePlate !== 'undefined') update.licensePlate = licensePlate;
-    if (typeof fuelRate !== 'undefined') update.fuelRate = fuelRate;
-    if (typeof status !== 'undefined') update.status = status;
-    if (typeof driver !== 'undefined') update.driver = driver;
-
     const currentVehicle = await Vehicle.findById(req.params.id);
 
     if (!currentVehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
 
-    if (typeof id !== 'undefined') update.id = id;
+    const update = {};
+
     if (typeof licensePlate !== 'undefined') update.licensePlate = licensePlate;
     if (typeof fuelRate !== 'undefined') update.fuelRate = fuelRate;
     if (typeof status !== 'undefined') update.status = status;
 
     if (typeof driver !== 'undefined') {
-
       const oldDriver = currentVehicle.driver;
 
-      const anotherVehicle = await Vehicle.findOne({
-        driver,
-        _id: { $ne: currentVehicle._id },
-      });
+      if (driver) {
+        const anotherVehicle = await Vehicle.findOne({
+          driver,
+          _id: { $ne: currentVehicle._id },
+        });
 
-      if (anotherVehicle) {
-        anotherVehicle.driver = oldDriver || null;
-        await anotherVehicle.save();
+        if (anotherVehicle) {
+          anotherVehicle.driver = oldDriver || null;
+          await anotherVehicle.save();
+        }
       }
 
-      update.driver = driver;
+      update.driver = driver || null;
     }
 
     const vehicle = await Vehicle.findByIdAndUpdate(
@@ -176,10 +169,11 @@ exports.updateVehicle = async (req, res) => {
         runValidators: true,
       }
     );
+
     cachedTrackingData = null;
     lastFetchedAt = 0;
-    res.status(200).json(vehicle);
 
+    res.status(200).json(vehicle);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

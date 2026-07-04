@@ -6,8 +6,8 @@ const vehicleSchema = Joi.object({
     'string.empty': 'License plate cannot be empty',
     'any.required': 'License plate is required',
   }),
-  fuelRate: Joi.number().positive().required().messages({
-    'number.positive': 'Fuel rate must be a positive number',
+  fuelRate: Joi.number().min(0).required().messages({
+    'number.min': 'Fuel rate must be greater than or equal to 0',
     'any.required': 'Fuel rate is required',
   }),
   status: Joi.string()

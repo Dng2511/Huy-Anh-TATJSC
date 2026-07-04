@@ -1,4 +1,4 @@
-import { Badge, Card, Col, Empty, Modal, Row, Select, Table, Typography, message } from 'antd'
+import { Button, Badge, Card, Col, Empty, Form, Input, InputNumber, Modal, Row, Select, Table, Typography, message } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import formatLicensePlate from '../../utils/formatLicensePlate'
@@ -76,6 +76,12 @@ function VehiclesPage() {
   const [updatingVehicleId, setUpdatingVehicleId] = useState(null)
   const markerRefs = useRef({})
 
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [creatingVehicle, setCreatingVehicle] = useState(false);
+  const [modalMode, setModalMode] = useState('create');
+  const [editingVehicleId, setEditingVehicleId] = useState(null);
+  const [addForm] = Form.useForm();
+
   const getVehicleDriverId = (vehicle) => vehicle?.driver?._id || vehicle?.driver || null
 
   const fetchGates = async () => {
@@ -147,6 +153,72 @@ function VehiclesPage() {
     confirmCancelText: 'Hủy',
   })
 
+  const handleAddVehicle = () => {
+    setModalMode('create');
+    setEditingVehicleId(null);
+
+    addForm.setFieldsValue({
+      licensePlate: '',
+      fuelRate: 0,
+    });
+
+    setIsAddModalOpen(true);
+  };
+
+  const handleEditVehicle = (record) => {
+    setModalMode('edit');
+    setEditingVehicleId(record._id);
+
+    addForm.setFieldsValue({
+      licensePlate: record.licensePlate,
+      fuelRate: record.fuelRate,
+    });
+
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setModalMode('create');
+    setEditingVehicleId(null);
+    addForm.resetFields();
+  };
+
+  const handleSubmitVehicle = async () => {
+    try {
+      const values = await addForm.validateFields();
+
+      setCreatingVehicle(true);
+
+      const payload = {
+        licensePlate: values.licensePlate,
+        fuelRate: Number(values.fuelRate) || 0,
+      };
+
+      if (modalMode === 'edit' && editingVehicleId) {
+        await vehicleApi.updateVehicle(editingVehicleId, payload);
+        message.success('Cập nhật phương tiện thành công');
+      } else {
+        await vehicleApi.createVehicle(payload);
+        message.success('Thêm phương tiện thành công');
+      }
+
+      handleCloseAddModal();
+      await fetchVehicles();
+    } catch (error) {
+      if (error?.errorFields) return;
+
+      console.error('Error saving vehicle:', error);
+      message.error(
+        modalMode === 'edit'
+          ? 'Lỗi khi cập nhật phương tiện'
+          : 'Lỗi khi thêm phương tiện'
+      );
+    } finally {
+      setCreatingVehicle(false);
+    }
+  };
+
   const handleChangeVehicleDriver = (vehicle, nextDriverId) => {
     const currentDriverId = getVehicleDriverId(vehicle)
     const normalizedNextDriverId = nextDriverId || null
@@ -191,6 +263,9 @@ function VehiclesPage() {
               <Title level={4} className="vehicles-section-title" style={{ margin: 0 }}>
                 {'Danh sách phương tiện'}
               </Title>
+              <Button type="primary" onClick={handleAddVehicle}>
+                + Thêm phương tiện
+              </Button>
             </div>
             <Table
               rowKey="_id"
@@ -228,6 +303,7 @@ function VehiclesPage() {
                         size="small"
                         style={{ width: '100%' }}
                         value={getVehicleDriverId(record) || undefined}
+                        key={`${record._id}-${getVehicleDriverId(record) || 'none'}`}
                         placeholder="Chọn tài xế"
                         allowClear
                         showSearch
@@ -238,7 +314,8 @@ function VehiclesPage() {
                           value: driver._id,
                           label: driver.name,
                         }))}
-                        onChange={(value) => handleChangeVehicleDriver(record, value)}
+                        onSelect={(value) => handleChangeVehicleDriver(record, value)}
+                        onClear={() => handleChangeVehicleDriver(record, null)}
                       />
                     </div>
                   ),
@@ -250,22 +327,30 @@ function VehiclesPage() {
                   render: (address) => address || '-',
                 },
                 {
-                  title: 'Phí nhiên liệu (L/100km)',
-                  dataIndex: 'fuelRate',
-                  width: 90,
-                  render: (rate) => (Number.isFinite(Number(rate)) ? Number(rate).toLocaleString('vi-VN') : '-'),
-                },
-                {
                   title: 'Trạng thái',
                   dataIndex: 'status',
                   width: 90,
                   render: (status) => <Badge color={vehicleStatusColor[status]} text={status == 'idle' ? 'Trống' : 'Có đơn'} />,
                 },
                 {
+                  title: 'Phí nhiên liệu (L/100km)', 
+                  dataIndex: 'fuelRate', 
+                  width: 90, 
+                },
+                {
                   title: 'Tốc độ GPS',
                   dataIndex: ['tracking', 'liveStatus'],
                   width: 80,
                   render: (_, record) => getGpsStatus(record),
+                },
+                {
+                  title: 'Hành động',
+                  key: 'actions',
+                  render: (_, record) => (
+                    <Button size="small" onClick={() => handleEditVehicle(record)}>
+                      {'Sửa'}
+                    </Button>
+                  ),
                 },
               ]}
               scroll={{ x: 900 }}
@@ -386,6 +471,43 @@ function VehiclesPage() {
           </div>
         </Col>
       </Row>
+      <Modal
+        title={modalMode === 'edit' ? 'Chỉnh sửa phương tiện' : 'Thêm phương tiện'}
+        open={isAddModalOpen}
+        onOk={handleSubmitVehicle}
+        onCancel={handleCloseAddModal}
+        okText={modalMode === 'edit' ? 'Cập nhật' : 'Lưu'}
+        cancelText="Hủy"
+        confirmLoading={creatingVehicle}
+        destroyOnHidden
+      >
+        <Form form={addForm} layout="vertical">
+          <Form.Item
+            label="Biển số xe"
+            name="licensePlate"
+            rules={[
+              { required: true, message: 'Vui lòng nhập biển số xe' },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Mức tiêu hao nhiên liệu (L/100km)"
+            name="fuelRate"
+            rules={[
+              { required: true, message: 'Vui lòng nhập mức tiêu hao nhiên liệu' },
+            ]}
+          >
+            <InputNumber
+              min={0}
+              step={0.1}
+              precision={1}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Card>
   )
 }
