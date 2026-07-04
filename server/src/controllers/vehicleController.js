@@ -1,7 +1,8 @@
 const axios = require('axios');
 const Vehicle = require('../models/Vehicle');
 
-
+let cachedTrackingData = null;
+let lastFetchedAt = 0;
 // Create a new vehicle
 exports.createVehicle = async (req, res) => {
   try {
@@ -24,6 +25,9 @@ exports.createVehicle = async (req, res) => {
       status,
     });
 
+    cachedTrackingData = null;
+    lastFetchedAt = 0;
+
     await vehicle.save();
     res.status(201).json(vehicle);
   } catch (error) {
@@ -35,6 +39,13 @@ exports.createVehicle = async (req, res) => {
 exports.getAllVehicles = async (req, res) => {
   try {
     const vehicles = await Vehicle.find().populate('driver', 'name');
+
+    const now = Date.now();
+    const cacheDuration = 5 * 1000;
+
+    if (cachedTrackingData && now - lastFetchedAt < cacheDuration) {
+      return res.json(cachedTrackingData);
+    }
 
     const response = await axios.post(
       'https://dvbk.vn/Home/get_AllTIBase',
@@ -80,6 +91,9 @@ exports.getAllVehicles = async (req, res) => {
           : null,
       };
     });
+
+    cachedTrackingData = result;
+    lastFetchedAt = now;
 
     res.json(result);
   } catch (error) {
@@ -162,7 +176,8 @@ exports.updateVehicle = async (req, res) => {
         runValidators: true,
       }
     );
-
+    cachedTrackingData = null;
+    lastFetchedAt = 0;
     res.status(200).json(vehicle);
 
   } catch (error) {
@@ -184,6 +199,9 @@ exports.deleteVehicles = async (req, res) => {
     const result = await Vehicle.deleteMany({
       _id: { $in: ids }
     });
+
+    cachedTrackingData = null;
+    lastFetchedAt = 0;
 
     res.status(200).json({
       message: 'Vehicles deleted successfully',
