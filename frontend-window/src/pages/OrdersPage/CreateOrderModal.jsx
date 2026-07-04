@@ -14,6 +14,24 @@ const toDateInputValue = (value) => {
     return date.toISOString().slice(0, 10)
 }
 
+function getDisTance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const rLat1 = lat1 * Math.PI / 180;
+    const rLat2 = lat2 * Math.PI / 180;
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(rLat1) * Math.cos(rLat2) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              
+    const c = 2 * Math.asin(Math.sqrt(a));
+    
+    return parseInt(R * c);
+}
+
 export default function CreateOrderModal({ visible, onCancel, onCreated, initialParams }) {
     const [partnerId, setPartnerId] = useState(null)
     const [pickup, setPickup] = useState(null)
@@ -99,6 +117,11 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
             return
         }
 
+        if (!vehicleId && status !== 'planned') {
+            message.error('Vui lòng chọn phương tiện để cập nhật')
+            return
+        }
+
         const payload = {
             partner: partnerId || undefined,
             pickup,
@@ -181,6 +204,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     // when vehicle selection changes, if vehicle has driver, set driverId automatically
     useEffect(() => {
         if (!vehicleId) return
+        if (status === 'completed' || status === 'cancelled') return
         const veh = (vehicles || []).find((v) => String(v._id) === String(vehicleId))
         if (veh) {
             if (veh.driver) {
@@ -262,10 +286,22 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
                             placeholder="Chọn xe"
                             value={vehicleId}
                             onChange={setVehicleId}
-                            options={(vehicles || []).map((v) => ({
-                                label: `${formatLicensePlate(v.licensePlate || '')}`,
-                                value: v._id,
-                            }))}
+                            options={(vehicles || []).map((v) => {
+                                const licensePlate = formatLicensePlate(v.licensePlate || '');
+                                const pickupGate = (gates || []).find((g) => String(g._id) === String(pickup));
+                                const distance = v.tracking?.lat && v.tracking?.lng && pickupGate && pickupGate.locate?.lat && pickupGate.locate?.lng
+                                    ? getDisTance(v.tracking.lat, v.tracking.lng, pickupGate.locate.lat, pickupGate.locate.lng)
+                                    : null;
+
+                                const isRunning = v.status !== 'idle';
+                                const noDriver = !v.driver;
+
+                                return {
+                                    label: `${licensePlate}${isRunning ? ' - Đang chạy' : noDriver ? ' - Chưa có tài xế' : distance !== null ? ` - Cách ${distance} km` : ''}`,
+                                    value: v._id,
+                                    disabled: isRunning || noDriver,
+                                };
+                            })}
                             style={{ width: '100%' }}
                             allowClear
                         />
@@ -279,6 +315,7 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
                             options={(drivers || []).map((d) => ({ label: d.name, value: d._id }))}
                             style={{ width: '100%' }}
                             allowClear
+                            disabled
                         />
                     </div>
 

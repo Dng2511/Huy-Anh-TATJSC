@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const Vehicle = require('../models/Vehicle');
 
 // Create a new order
 exports.createOrder = async (req, res) => {
@@ -23,6 +24,12 @@ exports.createOrder = async (req, res) => {
             });
         }
 
+        if (status !== 'planned' && !vehicle) {
+            return res.status(400).json({
+                error: 'Vehicle is required for non-planned orders'
+            });
+        }
+
         // Tạo order
         const order = await Order.create({
             partner,
@@ -36,6 +43,17 @@ exports.createOrder = async (req, res) => {
             cost,
             waitingCost
         });
+
+        const vehicleStatus =
+            status === 'completed' || status === 'cancelled' || status === 'planned'
+                ? 'idle'
+                : 'running';
+
+        if (order.vehicle) {
+            await Vehicle.findByIdAndUpdate(order.vehicle, {
+                status: vehicleStatus
+            });
+        }
 
 
         res.status(201).json(order);
@@ -292,12 +310,18 @@ exports.updateOrder = async (req, res) => {
             });
         }
 
+        if (status !== 'planned' && !vehicle) {
+            return res.status(400).json({
+                error: 'Vehicle is required for non-planned orders'
+            });
+        }
+
         const previousStatus = order.status;
         const newStatus = status !== undefined ? status : previousStatus;
 
         order.partner = partner === undefined ? order.partner : partner;
-        order.driver = driver === undefined ? order.driver : driver;
-        order.vehicle = vehicle === undefined ? order.vehicle : vehicle;
+        order.driver = driver === undefined ? null : driver;
+        order.vehicle = vehicle === undefined ? null : vehicle;
         order.pickup = pickup === undefined ? order.pickup : pickup;
         order.delivery = delivery === undefined ? order.delivery : delivery;
         order.isReefer = isReefer === undefined ? order.isReefer : isReefer;
@@ -316,6 +340,17 @@ exports.updateOrder = async (req, res) => {
         // If changing from waiting -> non-waiting: set waitingEnd to today
         if (previousStatus === 'waiting' && newStatus !== 'waiting') {
             order.waitingEnd = new Date();
+        }
+
+        const vehicleStatus =
+            newStatus === 'completed' || newStatus === 'cancelled' || newStatus === 'planned'
+                ? 'idle'
+                : 'running';
+
+        if (order.vehicle) {
+            await Vehicle.findByIdAndUpdate(order.vehicle, {
+                status: vehicleStatus
+            });
         }
 
         await order.save();

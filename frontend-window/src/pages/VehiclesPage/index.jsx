@@ -21,8 +21,6 @@ const SELECTED_VEHICLE_ZOOM = 15
 const vehicleStatusColor = {
   idle: '#52c41a',
   running: '#faad14',
-  maintenance: '#f5222d',
-  offline: '#8c8c8c',
 }
 
 const gpsStatusColor = {
@@ -261,7 +259,7 @@ function VehiclesPage() {
                   title: 'Trạng thái',
                   dataIndex: 'status',
                   width: 90,
-                  render: (status) => <Badge color={vehicleStatusColor[status]} text={status} />,
+                  render: (status) => <Badge color={vehicleStatusColor[status]} text={status == 'idle' ? 'Trống' : 'Có đơn'} />,
                 },
                 {
                   title: 'Tốc độ GPS',
