@@ -184,6 +184,7 @@ exports.getAllOrders = async (req, res) => {
                                 $project: {
                                     _id: 1,
                                     licensePlate: 1,
+                                    status: 1,
                                 },
                             },
                         ],

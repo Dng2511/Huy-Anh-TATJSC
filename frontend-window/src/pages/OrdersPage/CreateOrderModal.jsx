@@ -24,11 +24,11 @@ function getDisTance(lat1, lon1, lat2, lon2) {
     const rLat2 = lat2 * Math.PI / 180;
 
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(rLat1) * Math.cos(rLat2) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-              
+        Math.cos(rLat1) * Math.cos(rLat2) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
     const c = 2 * Math.asin(Math.sqrt(a));
-    
+
     return parseInt(R * c);
 }
 
@@ -175,10 +175,11 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
     // populate form when editing
     useEffect(() => {
         if (visible && initialParams) {
+            console.log('Populating form with initialParams:', initialParams)
             setPartnerId(initialParams.partner?._id || initialParams.partner || null)
             setPickup(initialParams.pickup?._id || initialParams.pickup || null)
             setDelivery(initialParams.delivery?._id || initialParams.delivery || null)
-            setVehicleId(initialParams.vehicle?._id || initialParams.vehicle || null)
+            setVehicleId(initialParams.vehicle?.status === 'running' ? null : initialParams.vehicle?._id || initialParams.vehicle || null);
             setDriverId(initialParams.driver?._id || initialParams.driver || null)
             setIsReefer(Boolean(initialParams.isReefer))
             setCost(Number(initialParams.cost) || 0)
@@ -287,23 +288,32 @@ export default function CreateOrderModal({ visible, onCancel, onCreated, initial
                             value={vehicleId}
                             onChange={setVehicleId}
                             options={(vehicles || []).map((v) => {
-                                const licensePlate = formatLicensePlate(v.licensePlate || '');
-                                const pickupGate = (gates || []).find((g) => String(g._id) === String(pickup));
-                                const distance = v.tracking?.lat && v.tracking?.lng && pickupGate && pickupGate.locate?.lat && pickupGate.locate?.lng
-                                    ? getDisTance(v.tracking.lat, v.tracking.lng, pickupGate.locate.lat, pickupGate.locate.lng)
-                                    : null;
+                                if (status === 'planned') {
+                                    const licensePlate = formatLicensePlate(v.licensePlate || '');
+                                    const pickupGate = (gates || []).find((g) => String(g._id) === String(pickup));
+                                    const distance = v.tracking?.lat && v.tracking?.lng && pickupGate && pickupGate.locate?.lat && pickupGate.locate?.lng
+                                        ? getDisTance(v.tracking.lat, v.tracking.lng, pickupGate.locate.lat, pickupGate.locate.lng)
+                                        : null;
 
-                                const isRunning = v.status !== 'idle';
-                                const noDriver = !v.driver;
+                                    const isRunning = v.status !== 'idle';
+                                    const noDriver = !v.driver;
 
-                                return {
-                                    label: `${licensePlate}${isRunning ? ' - Đang chạy' : noDriver ? ' - Chưa có tài xế' : distance !== null ? ` - Cách ${distance} km` : ''}`,
-                                    value: v._id,
-                                    disabled: isRunning || noDriver,
-                                };
+                                    return {
+                                        label: `${licensePlate}${isRunning ? ' - Đang chạy' : noDriver ? ' - Chưa có tài xế' : distance !== null ? ` - Cách ${distance} km` : ''}`,
+                                        value: v._id,
+                                        disabled: isRunning || noDriver,
+                                    };
+                                } else {
+                                    const licensePlate = formatLicensePlate(v.licensePlate || '');
+                                    return {
+                                        label: licensePlate,
+                                        value: v._id,
+                                    };
+                                }
                             })}
                             style={{ width: '100%' }}
                             allowClear
+                            disabled={status !== 'planned'}
                         />
                     </div>
                     <div>
