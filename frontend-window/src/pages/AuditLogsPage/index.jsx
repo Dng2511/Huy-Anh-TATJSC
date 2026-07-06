@@ -44,7 +44,7 @@ export default function AuditLogsPage() {
     vehicles: 'Phương tiện',
     drivers: 'Tài xế',
     gates: 'Cửa khẩu',
-    partners: 'Đối tác',
+    partners: 'Khách hàng',
     audit: 'Lịch sử thao tác',
   }
 

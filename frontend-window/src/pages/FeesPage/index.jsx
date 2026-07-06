@@ -372,7 +372,7 @@ function FeeMonthPanel({
           <Title level={4} className="fee-month-title">
             {getMonthDisplayName(monthKey)}
           </Title>
-          <Text className="fee-month-subtitle">Sửa trực tiếp, xóa dòng đã chọn và lưu tháng này giống trang đối tác.</Text>
+          <Text className="fee-month-subtitle">Sửa trực tiếp, xóa dòng đã chọn và lưu tháng này giống trang khách hàng.</Text>
         </div>
 
         <div className="fee-month-toolbar-actions">

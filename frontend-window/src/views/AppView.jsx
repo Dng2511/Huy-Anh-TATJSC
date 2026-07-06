@@ -257,7 +257,7 @@ function AppView() {
       description: '',
     },
     partners: {
-      title: 'Đối tác',
+      title: 'Khách hàng',
       description: '',
     },
     gates: {
@@ -285,7 +285,7 @@ function AppView() {
       { key: 'orders', label: 'Đơn hàng' },
       { key: 'vehicles', label: 'Phương tiện' },
       { key: 'drivers', label: 'Tài xế' },
-      { key: 'partners', label: 'Đối tác' },
+      { key: 'partners', label: 'Khách hàng' },
       { key: 'gates', label: 'Cửa khẩu' },
       { key: 'costs', label: 'Chi phí' },
       ...(canViewUsers ? [{ key: 'users', label: 'Người dùng' }, { key: 'audit', label: 'Lịch sử thao tác' }] : []),

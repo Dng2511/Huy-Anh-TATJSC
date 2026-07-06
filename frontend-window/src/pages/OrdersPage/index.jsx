@@ -1,5 +1,5 @@
 import { Badge, Card, Select, Table, Tag, Typography, message, Pagination, Col, Row, Button, Drawer, Descriptions } from 'antd'
-import { ArrowRightOutlined } from '@ant-design/icons';import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowRightOutlined } from '@ant-design/icons'; import { useEffect, useMemo, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import formatLicensePlate from '../../utils/formatLicensePlate'
 import { getGpsStatus, getMarkerColors } from '../../utils/gpsHelpers'
@@ -26,20 +26,142 @@ const orderStatusColor = {
   waiting: '#faad14',
   running: '#1890ff',
   delivering: '#1890ff',
+  unloading: '#beff18',
   completed: '#52c41a',
   cancelled: '#f5222d',
 }
 
 const statusDisplayName = {
   planned: 'Kế hoạch',
-  waiting: 'Chờ hàng',
-  running: 'Đang chạy',
-  delivering: 'Đang tháo hàng',
+  running: 'Đang đến lấy hàng',
+  waiting: 'Đang chờ hàng',
+  delivering: 'Đang giao hàng',
+  unloading: 'Đang dỡ hàng',
   completed: 'Hoàn thành',
   cancelled: 'Hủy',
+};
+
+function getDisTance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+
+  const rLat1 = lat1 * Math.PI / 180;
+  const rLat2 = lat2 * Math.PI / 180;
+
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.asin(Math.sqrt(a));
+
+  return parseInt(R * c);
 }
 
-// map icons imported from src/utils/mapIcons
+function formatArrivalTime(date) {
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const time = date.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (isToday) return `${time} hôm nay`;
+
+  const day = date.toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+
+  return `${time} ${day}`;
+}
+
+function getEtaText(distanceKm, speed) {
+  if (!speed || speed <= 5) return 'chưa xác định';
+
+  const minutes = Math.round((distanceKm / speed) * 60);
+  const arrival = new Date(Date.now() + minutes * 60 * 1000);
+
+  return formatArrivalTime(arrival);
+}
+
+function getWaitingDepartureTime(order) {
+  if (!order.updatedAt) return 'chưa xác định';
+
+  // ví dụ: sau khi waiting 2 tiếng thì dự kiến khởi hành
+  const WAITING_HOURS = 2;
+
+  const departure = new Date(order.updatedAt);
+  departure.setHours(departure.getHours() + WAITING_HOURS);
+
+  return formatArrivalTime(departure);
+}
+
+function getOrderStatusText(order, gates, vehicles) {
+  const vehicle = vehicles.find(v => v._id === order.vehicle?._id);
+
+  if (order.status === 'running') {
+    const pickupGate = gates.find(g => g._id === order.pickup?._id);
+
+    if (!vehicle?.tracking || !pickupGate?.locate) {
+      return 'Đang đến điểm lấy hàng';
+    }
+
+    const distance = getDisTance(
+      vehicle.tracking.lat,
+      vehicle.tracking.lng,
+      pickupGate.locate.lat,
+      pickupGate.locate.lng
+    );
+
+    const eta = getEtaText(distance, 40);
+
+    return `Đang đến lấy hàng, cách điểm lấy hàng ${distance} km, dự kiến đến điểm nhận vào \n${eta}`;
+  }
+
+  if (order.status === 'planned') {
+    return 'Chưa khởi hành, dự kiến khởi hành vào ngày ' + formatArrivalTime(new Date(order.orderDate));
+  }
+
+  if (order.status === 'waiting') {
+    return `Đang chờ hàng, dự kiến khởi hành \n${getWaitingDepartureTime(order)}`;
+  }
+
+  if (order.status === 'delivering') {
+    const deliveryGate = gates.find(g => g._id === order.delivery?._id);
+
+    if (!vehicle?.tracking || !deliveryGate?.locate) {
+      return 'Đang giao hàng';
+    }
+
+    const distance = getDisTance(
+      vehicle.tracking.lat,
+      vehicle.tracking.lng,
+      deliveryGate.locate.lat,
+      deliveryGate.locate.lng
+    );
+
+    const eta = getEtaText(distance, vehicle.tracking.speed);
+
+    return `Cách điểm nhận hàng ${distance} km, dự kiến đến điểm giao vào \n${eta}`;
+  }
+
+  if (order.status === 'unloading') {
+    return `Đang dỡ hàng, dự kiến hoàn thành vào \n${getWaitingDepartureTime(order)}`;
+  }
+
+  if (order.status === 'completed') {
+    return 'Đã hoàn thành';
+  }
+
+  return statusDisplayName[order.status] || order.status;
+}
 
 // GPS helpers imported from src/utils/gpsHelpers
 
@@ -206,7 +328,6 @@ function OrdersPage() {
   }
 
   const fetchOrders = async (page = 1, partner = null, status = null) => {
-    setLoading(true)
     try {
       const params = {
         page,
@@ -284,6 +405,7 @@ function OrdersPage() {
     // Refresh vehicles periodically
     const intervalId = setInterval(() => {
       fetchVehicles()
+      fetchOrders(currentPage, searchPartner, searchStatus)
     }, 5000)
 
     return () => clearInterval(intervalId)
@@ -358,10 +480,10 @@ function OrdersPage() {
               >
                 <div>
                   <Text style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>
-                    Đối tác
+                    Khách hàng
                   </Text>
                   <Select
-                    placeholder="Chọn đối tác"
+                    placeholder="Chọn khách hàng"
                     allowClear
                     value={searchPartner}
                     onChange={handleFilterPartner}
@@ -379,14 +501,10 @@ function OrdersPage() {
                     allowClear
                     value={searchStatus}
                     onChange={handleFilterStatus}
-                    options={[
-                      { label: 'Kế hoạch', value: 'planned' },
-                      { label: 'Chờ', value: 'waiting' },
-                      { label: 'Đang chạy', value: 'running' },
-                      { label: 'Đang tháo', value: 'delivering' },
-                      { label: 'Hoàn thành', value: 'completed' },
-                      { label: 'Hủy', value: 'cancelled' },
-                    ]}
+                    options={Object.entries(statusDisplayName).map(([value, label]) => ({
+                      value,
+                      label,
+                    }))}
                     style={{ width: '100%' }}
                   />
                 </div>
@@ -418,7 +536,7 @@ function OrdersPage() {
                 },
                 {
                   title: 'Tuyến',
-                  width: 220,
+                  width: 150,
                   render: (_, record) => (
                     <div className="flex flex-col gap-2">
                       <div className="font-medium">
@@ -434,10 +552,13 @@ function OrdersPage() {
                 {
                   title: 'Trạng thái',
                   dataIndex: 'status',
-                  width: 100,
-                  render: (status) => (
-                    <Tag color={orderStatusColor[status]}>
-                      {statusDisplayName[status] || status}
+                  width: 140,
+                  render: (_, record) => (
+                    <Tag
+                      color={orderStatusColor[record.status]}
+                      style={{ whiteSpace: 'pre-line' }}
+                    >
+                      {getOrderStatusText(record, gates, vehicles)}
                     </Tag>
                   ),
                 },
@@ -558,7 +679,19 @@ function OrdersPage() {
                       <div className="order-popup">
                         <Text strong>{formatLicensePlate(vehicle.licensePlate)}</Text>
                         <br />
+                        <Text>Người lái: {vehicle.driver?.name || 'Chưa xác định'}</Text>
+                        <br />
                         <Text>GPS: {getGpsStatus(vehicle)}</Text>
+                        <br />
+                        <Text>Vĩ độ: {vehicle.tracking?.lat}</Text>
+                        <br />
+                        <Text>Kinh độ: {vehicle.tracking?.lng}</Text>
+                        <br />
+                        <Text>Tốc độ: {vehicle.tracking.speed} km/h</Text>
+                        <br />
+                        <Text>Địa chỉ: {vehicle.tracking.address}</Text>
+                        <br />
+                        <Text>Trạng thái: {vehicle.status}</Text>
                       </div>
                     </Popup>
                   </CircleMarker>
@@ -665,6 +798,7 @@ function OrdersPage() {
       <CreateOrderModal
         visible={createModalVisible}
         initialParams={createModalInitial}
+        existingOrders={orders}
         onCancel={() => {
           setCreateModalVisible(false)
           setCreateModalInitial(null)

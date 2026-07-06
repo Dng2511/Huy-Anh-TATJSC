@@ -115,7 +115,7 @@ function GatesPage() {
     },
     getEmptyMessage: () => 'Vui lòng chọn cửa khẩu cần xóa',
     getConfirmMessage: () =>
-      'Việc xóa cửa khẩu sẽ xóa cả giá cước của đối tác đang sử dụng chúng. Bạn có chắc chắn muốn xóa những cửa khẩu này?',
+      'Việc xóa cửa khẩu sẽ xóa cả giá cước của khách hàng đang sử dụng chúng. Bạn có chắc chắn muốn xóa những cửa khẩu này?',
     getErrorMessage: () => 'Lỗi khi xóa cửa khẩu',
     setLoading,
     confirmTitle: 'Xác nhận xóa cửa khẩu',

@@ -3,10 +3,31 @@ const Vehicle = require('../models/Vehicle');
 
 let cachedTrackingData = null;
 let lastFetchedAt = 0;
+
+const getTrackingData = async () => {
+  if (cachedTrackingData && Date.now() - lastFetchedAt < 5000) {
+    return cachedTrackingData;
+  }
+
+  const response = await axios.post(
+    'https://dvbk.vn/Home/get_AllTIBase',
+    {
+      UserID: 1106,
+    }
+  );
+
+  cachedTrackingData = response.data;
+  lastFetchedAt = Date.now();
+
+  return cachedTrackingData;
+};
+
+exports.getTrackingData = getTrackingData;
+
 // Create a new vehicle
 exports.createVehicle = async (req, res) => {
   try {
-    const { licensePlate, fuelRate} = req.body;
+    const { licensePlate, fuelRate } = req.body;
 
     const existingVehicle = await Vehicle.findOne({
       $or: [{ licensePlate }],
@@ -21,9 +42,6 @@ exports.createVehicle = async (req, res) => {
     const vehicle = new Vehicle({
       licensePlate, fuelRate
     });
-
-    cachedTrackingData = null;
-    lastFetchedAt = 0;
 
     await vehicle.save();
     res.status(201).json(vehicle);
@@ -40,18 +58,7 @@ exports.getAllVehicles = async (req, res) => {
     const now = Date.now();
     const cacheDuration = 5 * 1000;
 
-    if (cachedTrackingData && now - lastFetchedAt < cacheDuration) {
-      return res.json(cachedTrackingData);
-    }
-
-    const response = await axios.post(
-      'https://dvbk.vn/Home/get_AllTIBase',
-      {
-        UserID: 1106,
-      }
-    );
-
-    const trackingData = response.data;
+    const trackingData = await getTrackingData();
 
     // tạo map tracking
     const trackingMap = {};
@@ -88,9 +95,6 @@ exports.getAllVehicles = async (req, res) => {
           : null,
       };
     });
-
-    cachedTrackingData = result;
-    lastFetchedAt = now;
 
     res.json(result);
   } catch (error) {
