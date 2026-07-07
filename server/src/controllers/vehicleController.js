@@ -1,28 +1,6 @@
 const axios = require('axios');
 const Vehicle = require('../models/Vehicle');
-
-let cachedTrackingData = null;
-let lastFetchedAt = 0;
-
-const getTrackingData = async () => {
-  if (cachedTrackingData && Date.now() - lastFetchedAt < 5000) {
-    return cachedTrackingData;
-  }
-
-  const response = await axios.post(
-    'https://dvbk.vn/Home/get_AllTIBase',
-    {
-      UserID: 1106,
-    }
-  );
-
-  cachedTrackingData = response.data;
-  lastFetchedAt = Date.now();
-
-  return cachedTrackingData;
-};
-
-exports.getTrackingData = getTrackingData;
+const { getTrackingData } = require('../service/tracking');
 
 // Create a new vehicle
 exports.createVehicle = async (req, res) => {

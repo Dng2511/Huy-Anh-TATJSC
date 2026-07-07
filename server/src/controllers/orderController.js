@@ -2,67 +2,6 @@ const Order = require('../models/Order');
 const Vehicle = require('../models/Vehicle');
 const { getTrackingData } = require('./vehicleController');
 
-function getDistanceKm(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) ** 2;
-
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-const updateStatusByTracking = async () => {
-    const trackingData = await getTrackingData();
-    if (!trackingData) return;
-
-    const orders = await Order.find({
-        vehicle: { $ne: null },
-    })
-        .populate('vehicle', 'licensePlate')
-        .populate('delivery', 'locate')
-        .populate('pickup', 'locate');
-
-    for (const order of orders) {
-        const plate = order.vehicle?.licensePlate;
-        const deliveryLocate = order.delivery?.locate;
-        const pickupLocate = order.pickup?.locate;
-        const status = order.status;
-        const vehicleData = trackingData.find(
-            (v) => v.NormalizedPlate === plate
-        )
-        const twoDaysLater = new Date(Date.now() + 2 * 60 * 60 * 1000);
-
-        if (status === 'planned' && order.orderDate < twoDaysLater) {
-            order.status = 'running';
-            await order.save();
-        }
-        else if (status === 'running' && plate && pickupLocate) {
-            if (getDistanceKm(vehicleData?.Lt, vehicleData?.Ln,
-                              pickupLocate.lat, pickupLocate.lng) <= 5) {
-                order.status = 'waiting';
-                await order.save();
-            }
-        } else if (status === 'waiting' && plate && pickupLocate) {
-            if (getDistanceKm(vehicleData?.Lt, vehicleData?.Ln,
-                              pickupLocate.lat, pickupLocate.lng) > 5) {
-                order.status = 'running';
-                await order.save();
-            }
-        } else if (status === 'delivering' && plate && deliveryLocate) {
-            if (getDistanceKm(vehicleData?.Lt, vehicleData?.Ln,
-                              deliveryLocate.lat, deliveryLocate.lng) <= 1) {
-                order.status = 'unloading';
-                await order.save();
-            }
-        }
-    };
-}
-
     // Create a new order
     exports.createOrder = async (req, res) => {
         try {
@@ -159,8 +98,6 @@ const updateStatusByTracking = async () => {
                 'completed',
                 'cancelled',
             ];
-
-            updateStatusByTracking();
 
             const [orders, totalItems] = await Promise.all([
                 Order.aggregate([

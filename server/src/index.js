@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 const ensureAdmin = require('./utils/ensureAdmin');
 const { requireAuth } = require('./middleware/auth');
+const { startTrackingJob } = require('./service/tracking');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const driverRoutes = require('./routes/driverRoutes');
@@ -72,6 +73,7 @@ const startServer = async () => {
     await connectDB();
     // ensure admin user exists when DB is empty
     await ensureAdmin();
+    startTrackingJob();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

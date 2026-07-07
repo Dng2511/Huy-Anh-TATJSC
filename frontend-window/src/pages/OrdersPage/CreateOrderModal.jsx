@@ -184,29 +184,30 @@ function getVehicleAvailableText(vehicle, orders, pickup, gates) {
         !['completed', 'cancelled'].includes(o.status)
     )
 
-   if (activeOrders.length === 0) {
-    const minutes = estimateVehicleToGateMinutes(
-        vehicle,
-        pickup,
-        gates
-    );
+    if (activeOrders.length === 0) {
+        const minutes = estimateVehicleToGateMinutes(
+            vehicle,
+            pickup,
+            gates
+        );
 
-    if (minutes == null) {
-        return 'Chưa xác định';
+        if (minutes == null) {
+            return 'Chưa xác định';
+        }
+
+        const arrival = new Date(
+            Date.now() + minutes * 60 * 1000 + 300 * 60 * 1000
+        );
+
+        if (minutes < 5) {
+            return 'Có thể nhận đơn ngay';
+        }
+
+        return `Dự kiến có thể đến vào ${formatArrivalTime(arrival)}`;
     }
-
-    const arrival = new Date(
-        Date.now() + minutes * 60 * 1000 + 30 * 60 * 1000
-    );
-
-    if (minutes < 5) {
-        return 'Có thể nhận đơn ngay';
-    }
-
-    return `Dự kiến có thể đến vào ${formatArrivalTime(arrival)}`;
-}
 
     let latestAvailableTime = null
+    let earliestAvailableTime = null
 
     activeOrders.forEach((order) => {
         const availableTime = estimateVehicleAvailableTime(
@@ -555,34 +556,34 @@ export default function CreateOrderModal({
                     </div>
                 </div>
 
-                
-                    <div>
-                        <div style={{ marginBottom: 6, fontWeight: 500 }}>Xe</div>
-                        <Select
-                            placeholder="Chọn xe"
-                            value={vehicleId}
-                            onChange={setVehicleId}
-                            options={(vehicles || []).map((v) => {
-                                const licensePlate = formatLicensePlate(v.licensePlate || '')
-                                const noDriver = !v.driver
 
-                                const availableText = getVehicleAvailableText(
-                                    v,
-                                    existingOrders,
-                                    pickup,
-                                    gates
-                                )
+                <div>
+                    <div style={{ marginBottom: 6, fontWeight: 500 }}>Xe</div>
+                    <Select
+                        placeholder="Chọn xe"
+                        value={vehicleId}
+                        onChange={setVehicleId}
+                        options={(vehicles || []).map((v) => {
+                            const licensePlate = formatLicensePlate(v.licensePlate || '')
+                            const noDriver = !v.driver
 
-                                return {
-                                    label: `${licensePlate} - ${noDriver ? 'Chưa có tài xế' : availableText}`,
-                                    value: v._id,
-                                    disabled: noDriver,
-                                }
-                            })}
-                            style={{ width: '100%' }}
-                            allowClear
-                            disabled={status !== 'planned'}
-                        />
+                            const availableText = getVehicleAvailableText(
+                                v,
+                                existingOrders,
+                                pickup,
+                                gates
+                            )
+
+                            return {
+                                label: `${licensePlate} - ${noDriver ? 'Chưa có tài xế' : availableText}`,
+                                value: v._id,
+                                disabled: noDriver,
+                            }
+                        })}
+                        style={{ width: '100%' }}
+                        allowClear
+                        disabled={status !== 'planned'}
+                    />
 
                     <div>
                         <div style={{ marginBottom: 6, fontWeight: 500 }}>Tài xế</div>
