@@ -26,7 +26,7 @@ const orderStatusColor = {
   waiting: '#faad14',
   running: '#1890ff',
   delivering: '#1890ff',
-  unloading: '#beff18',
+  unloading: '#18ff27',
   completed: '#52c41a',
   cancelled: '#f5222d',
 }
@@ -149,7 +149,7 @@ function getOrderStatusText(order, gates, vehicles) {
 
     const eta = getEtaText(distance, vehicle.tracking.speed);
 
-    return `Cách điểm nhận hàng ${distance} km, dự kiến đến điểm giao vào \n${eta}`;
+    return `Đang giao hàng, cách điểm nhận hàng ${distance} km, dự kiến đến điểm giao vào \n${eta}`;
   }
 
   if (order.status === 'unloading') {

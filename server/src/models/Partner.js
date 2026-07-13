@@ -40,13 +40,11 @@ const partnerSchema = new mongoose.Schema(
         contact: {
             phone: {
                 type: String,
-                required: true,
                 trim: true,
             },
 
             email: {
                 type: String,
-                required: false,
                 trim: true,
             },
         },

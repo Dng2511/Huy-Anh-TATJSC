@@ -87,6 +87,11 @@ const updateStatusByTracking = async () => {
 
                 if (order.orderDate <= twoHoursLater) {
                     newStatus = 'running';
+                    const vehicle = order.vehicle;
+                    if (vehicle) {
+                        vehicle.status = 'running';
+                        await vehicle.save();
+                    }
                 }
             }
 
@@ -111,7 +116,7 @@ const updateStatusByTracking = async () => {
                     pickupLocate.lng
                 );
 
-                if (distanceToPickup !== null && distanceToPickup > 5) {
+                if (distanceToPickup !== null && distanceToPickup > 10) {
                     newStatus = 'delivering';
                 }
             }
@@ -124,8 +129,26 @@ const updateStatusByTracking = async () => {
                     deliveryLocate.lng
                 );
 
-                if (distanceToDelivery !== null && distanceToDelivery <= 1) {
+                if (distanceToDelivery !== null && distanceToDelivery <= 5) {
                     newStatus = 'unloading';
+                }
+            } 
+
+            else if (order.status === 'unloading' && deliveryLocate) {
+                const distanceToDelivery = getDistanceKm(
+                    currentLat,
+                    currentLng,
+                    deliveryLocate.lat,
+                    deliveryLocate.lng
+                );
+
+                if (distanceToDelivery !== null && distanceToDelivery > 10) {
+                    newStatus = 'completed';
+                    const vehicle = order.vehicle;
+                    if (vehicle) {
+                        vehicle.status = 'idle';
+                        await vehicle.save();
+                    }
                 }
             }
 

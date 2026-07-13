@@ -50,8 +50,15 @@ function PartnersPage({ onDirtyChange }) {
   const [draftPartners, setDraftPartners] = useState([])
   const [selectedRateKeys, setSelectedRateKeys] = useState({})
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [savingPartnerIds, setSavingPartnerIds] = useState({})
+  const [isAddPartnerModalOpen, setIsAddPartnerModalOpen] = useState(false)
+  const [creatingPartner, setCreatingPartner] = useState(false)
+  const [deletingPartnerIds, setDeletingPartnerIds] = useState({})
+  const [newPartner, setNewPartner] = useState({
+    name: '',
+    contact: { phone: '', email: '' },
+    waitingCost: 0,
+  })
   const [isAddGateModalOpen, setIsAddGateModalOpen] = useState(false)
   const [creatingGate, setCreatingGate] = useState(false)
   const [pendingRateField, setPendingRateField] = useState(null)
@@ -99,12 +106,6 @@ function PartnersPage({ onDirtyChange }) {
     }
   }
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(value)
-  }
 
   const originalPartnerMap = useMemo(
     () => Object.fromEntries(originalPartners.map((partner) => [partner._id, buildComparablePartner(partner)])),
@@ -287,39 +288,79 @@ function PartnersPage({ onDirtyChange }) {
     }))
   }
 
-  const saveChanges = async () => {
-    const changedPartners = draftPartners.filter((partner) => dirtyPartnerIds.includes(partner._id))
-    if (!changedPartners.length) {
+
+  const resetNewPartner = () => {
+    setNewPartner({
+      name: '',
+      contact: { phone: '', email: '' },
+      waitingCost: 0,
+    })
+  }
+
+  const closeAddPartnerModal = () => {
+    if (creatingPartner) return
+    setIsAddPartnerModalOpen(false)
+    resetNewPartner()
+  }
+
+  const handleCreatePartner = async () => {
+    const name = newPartner.name.trim()
+    const phone = newPartner.contact.phone.trim()
+    const email = newPartner.contact.email.trim()
+
+    if (!name) {
+      message.warning('Vui lòng nhập tên công ty')
       return
     }
 
-    setSaving(true)
+    setCreatingPartner(true)
     try {
-      await Promise.all(changedPartners.map((partner) => partnerApi.updatePartner(partner._id, {
-        name: partner.name,
-        contact: {
-          phone: partner.contact.phone,
-          email: partner.contact.email,
-        },
-        waitingCost: Number(partner.waitingCost) || 0,
-        rates: partner.rates.map((rate) => ({
-          pickup: rate.pickup,
-          delivery: rate.delivery,
-          isReefer: !!rate.isReefer,
-          fixedCost: Number(rate.fixedCost) || 0,
-        })),
-      })))
+      await partnerApi.createPartner({
+        name,
+        contact: { phone, email },
+        waitingCost: Number(newPartner.waitingCost) || 0,
+        rates: [],
+      })
 
-      message.success('Đã lưu thay đổi thành công')
+      message.success('Đã thêm đối tác mới')
+      setIsAddPartnerModalOpen(false)
+      resetNewPartner()
       await fetchData()
-      onDirtyChange?.(false)
     } catch (error) {
-      console.error('Error saving partners:', error)
-      message.error('Lưu thay đổi thất bại')
-      throw error
+      console.error('Error creating partner:', error)
+      message.error(error?.response?.data?.message || 'Thêm đối tác thất bại')
+      console.log('Error response data:', error?.response?.data)
     } finally {
-      setSaving(false)
+      setCreatingPartner(false)
     }
+  }
+
+  const confirmDeletePartner = (partner) => {
+    const isDirty = dirtyPartnerIds.includes(partner._id)
+
+    Modal.confirm({
+      title: 'Xóa đối tác',
+      content: isDirty
+        ? `Đối tác "${partner.name}" đang có thay đổi chưa lưu. Bạn vẫn muốn xóa?`
+        : `Bạn có chắc chắn muốn xóa đối tác "${partner.name}" không?`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      async onOk() {
+        setDeletingPartnerIds((prev) => ({ ...prev, [partner._id]: true }))
+        try {
+          await partnerApi.deletePartner(partner._id)
+          message.success('Đã xóa đối tác')
+          await fetchData()
+        } catch (error) {
+          console.error('Error deleting partner:', error)
+          message.error(error?.response?.data?.message || 'Xóa đối tác thất bại')
+          throw error
+        } finally {
+          setDeletingPartnerIds((prev) => ({ ...prev, [partner._id]: false }))
+        }
+      },
+    })
   }
 
   const savePartner = async (partnerId) => {
@@ -353,7 +394,7 @@ function PartnersPage({ onDirtyChange }) {
       onDirtyChange?.(false)
     } catch (error) {
       console.error('Error saving partner:', error)
-      message.error('Lưu thay đổi thất bại')
+      message.error(error?.response?.data?.errors?.[0]?.message || 'Lưu thay đổi thất bại')
       throw error
     } finally {
       setSavingPartnerIds((prev) => ({ ...prev, [partnerId]: false }))
@@ -412,7 +453,7 @@ function PartnersPage({ onDirtyChange }) {
           value={cost}
           style={{ width: 160 }}
           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-          parser={(value) => Number((value || '').replace(/\,/g, ''))}
+          parser={(value) => Number((value || '').replace(/,/g, ''))}
           onChange={(value) => updateRateField(partnerId, record._localId, 'fixedCost', Number(value) || 0)}
         />
       ),
@@ -494,7 +535,7 @@ function PartnersPage({ onDirtyChange }) {
                       className={waitingCostDirty ? 'unsaved-input' : ''}
                       style={{ marginTop: 6, width: 220 }}
                       formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={(value) => Number((value || '').replace(/\,/g, ''))}
+                      parser={(value) => Number((value || '').replace(/,/g, ''))}
                       onChange={(value) => updateWaitingCost(partner._id, value)}
                     />
                   </div>
@@ -541,7 +582,15 @@ function PartnersPage({ onDirtyChange }) {
               style={{ marginTop: 16 }}
               size="small"
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+              <Button
+                danger
+                size="large"
+                loading={!!deletingPartnerIds[partner._id]}
+                onClick={() => confirmDeletePartner(partner)}
+              >
+                Xóa đối tác
+              </Button>
               <Button
                 type="primary"
                 size="large"
@@ -550,7 +599,7 @@ function PartnersPage({ onDirtyChange }) {
                 loading={!!savingPartnerIds[partner._id]}
                 onClick={() => savePartner(partner._id)}
               >
-                {'Lưu'}
+                Lưu
               </Button>
             </div>
           </div>
@@ -568,18 +617,13 @@ function PartnersPage({ onDirtyChange }) {
     )
   }
 
-  if (draftPartners.length === 0) {
-    return (
-      <Card>
-        <Empty description={'Không có dữ liệu'} />
-      </Card>
-    )
-  }
-
   return (
     <Card className="module-card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>{'Danh sách các công ty vận chuyển'}</h2>
+        <h2 style={{ margin: 0 }}>Danh sách các công ty vận chuyển</h2>
+        <Button type="primary" onClick={() => setIsAddPartnerModalOpen(true)}>
+          + Thêm đối tác
+        </Button>
       </div>
       {hasUnsavedChanges ? (
         <Alert
@@ -589,7 +633,88 @@ function PartnersPage({ onDirtyChange }) {
           message={'Bạn có thay đổi chưa lưu. Các vùng màu vàng là phần đã chỉnh sửa.'}
         />
       ) : null}
-      <Collapse items={getCollapseItems()} />
+      {draftPartners.length > 0 ? (
+        <Collapse items={getCollapseItems()} />
+      ) : (
+        <Empty description="Chưa có đối tác">
+          <Button type="primary" onClick={() => setIsAddPartnerModalOpen(true)}>
+            Thêm đối tác đầu tiên
+          </Button>
+        </Empty>
+      )}
+
+      <Modal
+        title="Thêm đối tác mới"
+        open={isAddPartnerModalOpen}
+        onCancel={closeAddPartnerModal}
+        onOk={handleCreatePartner}
+        okText="Thêm"
+        cancelText="Hủy"
+        confirmLoading={creatingPartner}
+        maskClosable={!creatingPartner}
+        closable={!creatingPartner}
+        destroyOnClose
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <div>
+            <Text strong>Tên công ty:</Text>
+            <Input
+              autoFocus
+              value={newPartner.name}
+              placeholder="Nhập tên công ty"
+              maxLength={150}
+              style={{ marginTop: 6 }}
+              onChange={(event) => setNewPartner((prev) => ({
+                ...prev,
+                name: event.target.value,
+              }))}
+            />
+          </div>
+
+          <div>
+            <Text strong>Email:</Text>
+            <Input
+              type="email"
+              value={newPartner.contact.email}
+              placeholder="Nhập email"
+              style={{ marginTop: 6 }}
+              onChange={(event) => setNewPartner((prev) => ({
+                ...prev,
+                contact: { ...prev.contact, email: event.target.value },
+              }))}
+            />
+          </div>
+
+          <div>
+            <Text strong>Số điện thoại:</Text>
+            <Input
+              value={newPartner.contact.phone}
+              placeholder="Nhập số điện thoại"
+              maxLength={20}
+              style={{ marginTop: 6 }}
+              onChange={(event) => setNewPartner((prev) => ({
+                ...prev,
+                contact: { ...prev.contact, phone: event.target.value },
+              }))}
+            />
+          </div>
+
+          <div>
+            <Text strong>Chi phí chờ hàng:</Text>
+            <InputNumber
+              min={0}
+              value={newPartner.waitingCost}
+              style={{ marginTop: 6, width: '100%' }}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => Number((value || '').replace(/,/g, ''))}
+              onChange={(value) => setNewPartner((prev) => ({
+                ...prev,
+                waitingCost: Number(value) || 0,
+              }))}
+            />
+          </div>
+        </Space>
+      </Modal>
 
       <AddGateModal
         open={isAddGateModalOpen}

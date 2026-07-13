@@ -1,6 +1,7 @@
-import { Card, Table, Pagination, Typography, Modal, Descriptions, message } from 'antd'
+import { Card, Table, Pagination, Typography, Tag, Modal, Descriptions, message } from 'antd'
 import { useEffect, useState } from 'react'
 import auditApi from '../../services/Api/auditApi'
+import './auditLogsPage.css'
 
 const { Title, Text } = Typography
 
@@ -58,24 +59,69 @@ export default function AuditLogsPage() {
       if (record.resourceTitle) return `${label} (${record.resourceTitle})`
       if (record.resourceId) return `${label} (${record.resourceId})`
       return label
-    } },
+    }},
+    {
+      title: 'Trạng thái',
+      key: 'success',
+      render: (_, record) => (
+        <Tag color={record.success ? 'success' : 'error'}>
+          {record.success ? 'Thành công' : 'Thất bại'}
+        </Tag>
+      ),
+    }
   ]
+
+  const parseJsonValue = (value) => {
+  if (!value) return {}
+
+  if (typeof value === 'object') {
+    return value
+  }
+
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+  const renderJson = (value) => {
+    const parsedValue = parseJsonValue(value)
+
+    return (
+      <pre
+        style={{
+          margin: 0,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          maxHeight: 300,
+          overflow: 'auto',
+        }}
+      >
+        {typeof parsedValue === 'string'
+          ? parsedValue
+          : JSON.stringify(parsedValue, null, 2)}
+      </pre>
+    )
+  }
 
   return (
     <Card className="module-card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <Title level={4} style={{ margin: 0 }}>Lịch sử thao tác</Title>
-        <Text type="secondary">Chỉ xem - không có nút thêm/xóa</Text>
       </div>
 
       <Table
-        rowKey={(r) => r._id}
+        rowKey={(record) => record._id}
         dataSource={logs}
         columns={columns}
         loading={loading}
         pagination={false}
         onRow={(record) => ({
           onClick: () => setSelected(record),
+          style: {
+            cursor: 'pointer',
+          },
         })}
       />
 
@@ -85,21 +131,88 @@ export default function AuditLogsPage() {
 
       <Modal
         title="Chi tiết bản ghi"
-        visible={!!selected}
+        open={!!selected}
         onCancel={() => setSelected(null)}
         footer={null}
-        width={800}
+        width={850}
+        destroyOnClose
       >
         {selected && (
-          <Descriptions column={1} bordered>
-            <Descriptions.Item label="Thời gian">{new Date(selected.createdAt).toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="Người thực hiện">{selected.actorName || selected.userName}</Descriptions.Item>
-            <Descriptions.Item label="Hành động">{actionLabels[selected.action] || selected.action}</Descriptions.Item>
-            <Descriptions.Item label="Đường dẫn">{selected.path}</Descriptions.Item>
-            <Descriptions.Item label="Tài nguyên">{(resourceLabels[selected.resource] || selected.resource) || '-'}{selected.resourceTitle ? ` / ${selected.resourceTitle}` : (selected.resourceId ? ` / ${selected.resourceId}` : '')}</Descriptions.Item>
-            <Descriptions.Item label="Yêu cầu">{JSON.stringify(selected.requestBody || selected.params || selected.query || {}, null, 2)}</Descriptions.Item>
-            <Descriptions.Item label="Phản hồi">{JSON.stringify(selected.responseBody || {}, null, 2)}</Descriptions.Item>
-            <Descriptions.Item label="IP / UA">{selected.ip} / {selected.userAgent}</Descriptions.Item>
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="Thời gian">
+              {selected.createdAt
+                ? new Date(selected.createdAt).toLocaleString('vi-VN')
+                : '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Người thực hiện">
+              {selected.actorName ||
+                selected.userName ||
+                selected.user?.name ||
+                selected.user?.username ||
+                '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Hành động">
+              {actionLabels[selected.action] || selected.action || '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Phương thức">
+              <Tag>{selected.method || '-'}</Tag>
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Đường dẫn">
+              {selected.path || '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Tài nguyên">
+              {resourceLabels[selected.resource] || selected.resource || '-'}
+
+              {(selected.resourceTitle || selected.resourceId) && (
+                <>
+                  {' / '}
+                  {selected.resourceTitle || selected.resourceId}
+                </>
+              )}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Trạng thái">
+              <Tag color={selected.success ? 'success' : 'error'}>
+                {selected.success ? 'Thành công' : 'Thất bại'}
+              </Tag>
+
+              {selected.statusCode ? (
+                <Text style={{ marginLeft: 8 }}>
+                  HTTP {selected.statusCode}
+                </Text>
+              ) : null}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Dữ liệu yêu cầu">
+              {renderJson(selected.requestBody)}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Tham số đường dẫn">
+              {renderJson(selected.params)}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Tham số truy vấn">
+              {renderJson(selected.query)}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Phản hồi">
+              {renderJson(selected.responseBody)}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Địa chỉ IP">
+              {selected.ip || '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Thiết bị / Trình duyệt">
+              <Text style={{ wordBreak: 'break-word' }}>
+                {selected.userAgent || '-'}
+              </Text>
+            </Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

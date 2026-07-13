@@ -39,26 +39,26 @@ async function getLogs(req, res) {
       switch ((it.resource || '').toLowerCase()) {
         case 'users':
           if (rid) {
-            const u = await User.findById(rid).lean();
-            resourceTitle = u ? (u.name || u.username || rid) : rid;
+            const u = await User.findById(rid);
+            resourceTitle = u ? (u.name || u.username || rid) : 'Đã xóa';
           }
           break;
         case 'vehicles':
           if (rid) {
-            const v = await Vehicle.findById(rid).lean();
-            resourceTitle = v ? (v.licensePlate || rid) : rid;
+            const v = await Vehicle.findById(rid);
+            resourceTitle = v ? (v.licensePlate || rid) : 'Đã xóa';
           }
           break;
         case 'drivers':
           if (rid) {
-            const d = await Driver.findById(rid).lean();
-            resourceTitle = d ? (d.name || rid) : rid;
+            const d = await Driver.findById(rid);
+            resourceTitle = d ? (d.name || rid) : 'Đã xóa';
           }
           break;
         case 'partners':
           if (rid) {
-            const p = await Partner.findById(rid).lean();
-            resourceTitle = p ? (p.name || rid) : rid;
+            const p = await Partner.findById(rid);
+            resourceTitle = p ? (p.name || rid) : 'Đã xóa';
           }
           break;
         case 'orders':

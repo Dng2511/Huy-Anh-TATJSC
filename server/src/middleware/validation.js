@@ -86,13 +86,9 @@ const partnerSchema = Joi.object({
     }),
 
     contact: Joi.object({
-        phone: Joi.string().trim().required().messages({
-            'any.required': 'Phone is required',
-            'string.empty': 'Phone cannot be empty',
-        }),
-
-        email: Joi.string().trim().email().optional(),
-    }).required(),
+      phone: Joi.string().trim().allow(''),
+      email: Joi.string().trim().email().allow(''),
+    }).optional(),
 
     rates: Joi.array()
         .items(rateSchema)
