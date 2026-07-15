@@ -45,11 +45,6 @@ const { getTrackingData } = require('./vehicleController');
                 waitingCost
             });
 
-            const vehicleStatus =
-                status === 'completed' || status === 'cancelled' || status === 'planned'
-                    ? 'idle'
-                    : 'running';
-
             if (order.vehicle) {
                 await Vehicle.findByIdAndUpdate(order.vehicle, {
                     status: vehicleStatus
@@ -344,17 +339,6 @@ const { getTrackingData } = require('./vehicleController');
             // If changing from waiting -> non-waiting: set waitingEnd to today
             if (previousStatus === 'waiting' && newStatus !== 'waiting') {
                 order.waitingEnd = new Date();
-            }
-
-            const vehicleStatus =
-                newStatus === 'completed' || newStatus === 'cancelled' || newStatus === 'planned'
-                    ? 'idle'
-                    : 'running';
-
-            if (order.vehicle) {
-                await Vehicle.findByIdAndUpdate(order.vehicle, {
-                    status: vehicleStatus
-                });
             }
 
             await order.save();

@@ -1,5 +1,6 @@
 const axios = require('axios');
 const Order = require('../models/Order');
+const Vehicle = require('../models/Vehicle');
 
 let cachedTrackingData = null;
 let lastFetchedAt = 0;
@@ -57,16 +58,24 @@ const updateStatusByTracking = async () => {
         const orders = await Order.find({
             vehicle: { $ne: null },
             status: {
-                $in: ['planned', 'running', 'waiting', 'delivering'],
+                $nin: ['completed', 'cancelled'],
             },
         })
             .populate('vehicle', 'licensePlate')
             .populate('delivery', 'locate')
             .populate('pickup', 'locate');
 
+        const runningVehicleIds = new Set();
+
         for (const order of orders) {
             const plate = order.vehicle?.licensePlate;
             if (!plate) continue;
+            const vehicle = order.vehicle;
+            if (vehicle && vehicle.status !== 'running') {
+                runningVehicleIds.add(vehicle._id);
+                vehicle.status = 'running';
+                await vehicle.save();
+            }
 
             const vehicleData = trackingData.find(
                 (v) => v.NormalizedPlate === plate
@@ -84,15 +93,6 @@ const updateStatusByTracking = async () => {
 
             if (order.status === 'planned') {
                 const twoHoursLater = new Date(Date.now() + 2 * 60 * 60 * 1000);
-
-                if (order.orderDate <= twoHoursLater) {
-                    newStatus = 'running';
-                    const vehicle = order.vehicle;
-                    if (vehicle) {
-                        vehicle.status = 'running';
-                        await vehicle.save();
-                    }
-                }
             }
 
             else if (order.status === 'running' && pickupLocate) {
@@ -105,6 +105,7 @@ const updateStatusByTracking = async () => {
 
                 if (distanceToPickup !== null && distanceToPickup <= 5) {
                     newStatus = 'waiting';
+                    order.waitingStart = new Date();
                 }
             }
 
@@ -118,6 +119,7 @@ const updateStatusByTracking = async () => {
 
                 if (distanceToPickup !== null && distanceToPickup > 10) {
                     newStatus = 'delivering';
+                    order.waitingEnd = new Date();
                 }
             }
 
@@ -157,6 +159,16 @@ const updateStatusByTracking = async () => {
                 await order.save();
             }
         }
+
+        await Vehicle.updateMany(
+            {
+                _id: { $nin: [...runningVehicleIds] },
+                status: { $ne: "idle" },
+            },
+            {
+                $set: { status: "idle" },
+            }
+        );
     } catch (error) {
         console.error('Update tracking status error:', error.message);
     } finally {

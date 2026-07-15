@@ -200,7 +200,7 @@ function getVehicleAvailableText(vehicle, orders, pickup, gates) {
         );
 
         if (minutes < 5) {
-            return 'Có thể nhận đơn ngay';
+            return 'Chưa có đơn hàng nào, đang ở gần cửa khẩu lấy hàng';
         }
 
         return `Dự kiến có thể đến vào ${formatArrivalTime(arrival)}`;
@@ -597,7 +597,6 @@ export default function CreateOrderModal({
                             }))}
                             style={{ width: '100%' }}
                             allowClear
-                            disabled
                         />
                     </div>
                 </div>
