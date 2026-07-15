@@ -70,6 +70,7 @@ const updateStatusByTracking = async () => {
         for (const order of orders) {
             const plate = order.vehicle?.licensePlate;
             if (!plate) continue;
+
             const vehicle = order.vehicle;
             if (vehicle && vehicle.status !== 'running') {
                 runningVehicleIds.add(vehicle._id);
@@ -93,6 +94,9 @@ const updateStatusByTracking = async () => {
 
             if (order.status === 'planned') {
                 const twoHoursLater = new Date(Date.now() + 2 * 60 * 60 * 1000);
+                if (order.orderDate <= twoHoursLater) {
+                    newStatus = 'running';
+                }
             }
 
             else if (order.status === 'running' && pickupLocate) {
