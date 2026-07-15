@@ -176,62 +176,6 @@ function estimateVehicleAvailableTime(oldOrder, newPickupId, gates, vehicle) {
     return new Date(oldFinishTime.getTime() + returnMinutes * 60 * 1000)
 }
 
-function getVehicleAvailableText(vehicle, orders, pickup, gates) {
-    if (!pickup) return 'Chọn điểm lấy hàng để tính thời gian'
-
-    const activeOrders = orders.filter((o) =>
-        String(o.vehicle?._id || o.vehicle) === String(vehicle._id) &&
-        !['completed', 'cancelled'].includes(o.status)
-    )
-
-    if (activeOrders.length === 0) {
-        const minutes = estimateVehicleToGateMinutes(
-            vehicle,
-            pickup,
-            gates
-        );
-
-        if (minutes == null) {
-            return 'Chưa xác định';
-        }
-
-        const arrival = new Date(
-            Date.now() + minutes * 60 * 1000 + 300 * 60 * 1000
-        );
-
-        if (minutes < 5) {
-            return 'Có thể nhận đơn ngay';
-        }
-
-        return `Dự kiến có thể đến vào ${formatArrivalTime(arrival)}`;
-    }
-
-    let latestAvailableTime = null
-    let earliestAvailableTime = null
-
-    activeOrders.forEach((order) => {
-        const availableTime = estimateVehicleAvailableTime(
-            order,
-            pickup,
-            gates,
-            vehicle
-        )
-
-        if (
-            availableTime &&
-            (!latestAvailableTime || availableTime > latestAvailableTime)
-        ) {
-            latestAvailableTime = availableTime
-        }
-    })
-
-    if (!latestAvailableTime) {
-        return 'Chưa xác định thời gian'
-    }
-
-    return `Dự kiến sẵn sàng ${formatArrivalTime(latestAvailableTime)}`
-}
-
 export default function CreateOrderModal({
     visible,
     onCancel,
@@ -565,24 +509,13 @@ export default function CreateOrderModal({
                         onChange={setVehicleId}
                         options={(vehicles || []).map((v) => {
                             const licensePlate = formatLicensePlate(v.licensePlate || '')
-                            const noDriver = !v.driver
-
-                            const availableText = getVehicleAvailableText(
-                                v,
-                                existingOrders,
-                                pickup,
-                                gates
-                            )
-
                             return {
-                                label: `${licensePlate} - ${noDriver ? 'Chưa có tài xế' : availableText}`,
+                                label: `${licensePlate}`,
                                 value: v._id,
-                                disabled: noDriver,
                             }
                         })}
                         style={{ width: '100%' }}
                         allowClear
-                        disabled={status !== 'planned'}
                     />
 
                     <div>
@@ -597,7 +530,6 @@ export default function CreateOrderModal({
                             }))}
                             style={{ width: '100%' }}
                             allowClear
-                            disabled
                         />
                     </div>
                 </div>

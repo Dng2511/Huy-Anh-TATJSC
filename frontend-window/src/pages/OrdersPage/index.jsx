@@ -1,4 +1,4 @@
-import { Badge, Card, Select, Table, Tag, Typography, message, Pagination, Col, Row, Button, Drawer, Descriptions } from 'antd'
+import { Badge, Card, Select, Table, Tag, Typography, message, Pagination, Col, Row, Button, Drawer, Descriptions, Modal } from 'antd'
 import { ArrowRightOutlined } from '@ant-design/icons'; import { useEffect, useMemo, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import formatLicensePlate from '../../utils/formatLicensePlate'
@@ -14,6 +14,7 @@ import BulkDeleteButton from '../../components/BulkDeleteButton'
 import 'leaflet/dist/leaflet.css'
 import './OrdersPage.css'
 import CreateOrderModal from './CreateOrderModal'
+import VehicleTimeline from './VehicleTimeline'
 
 const { Text, Title } = Typography
 
@@ -810,6 +811,15 @@ function OrdersPage() {
         }}
       />
 
+      {createModalVisible && (
+          <div className="timeline-panel">
+              <VehicleTimeline
+                  visible={createModalVisible}
+                  vehicles={vehicles}
+                  gates={gates}
+              />
+          </div>
+      )}
 
     </Card>
   )
