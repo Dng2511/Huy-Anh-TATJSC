@@ -46,4 +46,14 @@ export default {
             throw error;
         }
     },
+
+    getAverageSpeed: async () => {
+        try {
+            const response = await Http.get('/vehicles/average-speed');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching average speed:', error);
+            throw error;
+        }
+    }
 }

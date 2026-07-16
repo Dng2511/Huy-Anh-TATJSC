@@ -5,6 +5,8 @@ const Vehicle = require('../models/Vehicle');
 let cachedTrackingData = null;
 let lastFetchedAt = 0;
 let isUpdating = false;
+let averageSpeed = 0;
+let speedCount = 0;
 
 const CACHE_DURATION = 5 * 1000;
 const TRACKING_INTERVAL = 5 * 1000;
@@ -46,6 +48,10 @@ const getTrackingData = async () => {
     return cachedTrackingData;
 };
 
+const getAverageSpeed = () => {
+    return averageSpeed;
+}
+
 const updateStatusByTracking = async () => {
     if (isUpdating) return;
 
@@ -54,6 +60,25 @@ const updateStatusByTracking = async () => {
 
         const trackingData = await getTrackingData();
         if (!trackingData) return;
+
+        // Calculate average speed
+        if (speedCount < 5000) {
+            let totalSpeed = 0;
+            let validSpeedCount = 0;
+            const lastUpdate = new Date(vehicle.RealDate.match(/\d+/)[0] * 1);
+            const disconnected = Date.now() - lastUpdate.getTime() > 10 * 60 * 1000;
+
+            trackingData.forEach((vehicle) => {
+                if (vehicle.Speed !== undefined && vehicle.Speed !== null && vehicle.Speed > 0 && vehicle.disconnected !== true) {
+                    totalSpeed += vehicle.Speed;
+                    validSpeedCount++;
+                }
+            });
+            if (validSpeedCount > 0) {
+                averageSpeed = (averageSpeed * speedCount + totalSpeed) / (speedCount + validSpeedCount);
+                speedCount += validSpeedCount;
+            }
+        }
 
         const orders = await Order.find({
             vehicle: { $ne: null },
@@ -192,4 +217,5 @@ module.exports = {
     getTrackingData,
     updateStatusByTracking,
     startTrackingJob,
+    getAverageSpeed,
 };

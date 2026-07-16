@@ -123,7 +123,7 @@ function getWaitingDepartureTime(order) {
   return formatArrivalTime(departure);
 }
 
-function getOrderStatusText(order, gates, vehicles) {
+function getOrderStatusText(order, gates, vehicles, speed) {
   const vehicle = vehicles.find(v => v._id === order.vehicle?._id);
 
   if (order.status === 'running') {
@@ -140,7 +140,7 @@ function getOrderStatusText(order, gates, vehicles) {
       pickupGate.locate.lng
     );
 
-    const eta = getEtaText(distance, 40);
+    const eta = getEtaText(distance, speed || 40);
 
     return `Đang đến lấy hàng, cách điểm lấy hàng ${distance} km, dự kiến đến điểm nhận vào \n${eta}`;
   }
@@ -167,7 +167,7 @@ function getOrderStatusText(order, gates, vehicles) {
       deliveryGate.locate.lng
     );
 
-    const eta = getEtaText(distance, 40);
+    const eta = getEtaText(distance, speed || 40);
 
     return `Đang giao hàng, cách điểm nhận hàng ${distance} km, dự kiến đến điểm giao vào \n${eta}`;
   }
@@ -242,6 +242,7 @@ function OrdersPage() {
   const [vehicleLocation, setVehicleLocation] = useState(null)
   const [routeCoords, setRouteCoords] = useState(null)
   const vehicleMarkerRefs = useRef({})
+  const [averageSpeed, setAverageSpeed] = useState(40)
 
   const selectedOrderCoordinates = useMemo(() => {
     if (!selectedOrder) return []
@@ -420,12 +421,23 @@ function OrdersPage() {
     confirmCancelText: 'Hủy',
   })
 
+  const fetchAverageSpeed = async () => {
+    try {
+      const response = await vehicleApi.getAverageSpeed()
+      const averageSpeedValue = response?.averageSpeed || 40
+      setAverageSpeed(averageSpeedValue)
+    } catch (error) {
+      console.error('Error fetching average speed:', error)
+    }
+  }
+
   useEffect(() => {
     // initial load
     fetchOrders(currentPage, searchPartner, searchMonth, searchYear)
     fetchGates()
     fetchVehicles()
     fetchPartners()
+    fetchAverageSpeed()
   }, [])
 
   // When an order is created elsewhere (CreateOrderModal via context), refresh list
@@ -626,7 +638,7 @@ function OrdersPage() {
                       color={orderStatusColor[record.status]}
                       style={{ whiteSpace: 'pre-line' }}
                     >
-                      {getOrderStatusText(record, gates, vehicles)}
+                      {getOrderStatusText(record, gates, vehicles, averageSpeed)}
                     </Tag>
                   ),
                 },

@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Vehicle = require('../models/Vehicle');
-const { getTrackingData } = require('../service/tracking');
+const { getTrackingData, getAverageSpeed } = require('../service/tracking');
 
 // Create a new vehicle
 exports.createVehicle = async (req, res) => {
@@ -34,7 +34,6 @@ exports.getAllVehicles = async (req, res) => {
     const vehicles = await Vehicle.find().populate('driver', 'name');
 
     const now = Date.now();
-    const cacheDuration = 5 * 1000;
 
     const trackingData = await getTrackingData();
 
@@ -49,6 +48,9 @@ exports.getAllVehicles = async (req, res) => {
     const result = vehicles.map((vehicle) => {
       const tracking =
         trackingMap[vehicle.licensePlate];
+      
+      const lastUpdate = new Date(tracking?.RealDate.match(/\d+/)[0] * 1);
+      const disconnected = lastUpdate ? now - lastUpdate.getTime() > 10 * 60 * 1000 : true;
 
       return {
         ...vehicle.toObject(),
@@ -62,7 +64,9 @@ exports.getAllVehicles = async (req, res) => {
             driverName:
               tracking.DriverName,
             liveStatus:
-              tracking.Speed > 0
+              disconnected
+                ? 'Mất kết nối'
+                : tracking.Speed > 0
                 ? `${tracking.Speed} km/h`
                 : `Đỗ ${tracking.StopOrParkTime}`,
 
@@ -80,6 +84,10 @@ exports.getAllVehicles = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+exports.getAverageSpeed = (req, res) => {
+  res.json({ averageSpeed: getAverageSpeed() > 0 ? getAverageSpeed() : 40 });
 };
 
 function normalizePlate(plate) {

@@ -7,6 +7,7 @@ const { checkUser } = require('../middleware/checkUser');
 // CRUD endpoints for vehicles
 router.post('/', checkUser, validateVehicle, vehicleController.createVehicle);
 router.get('/', vehicleController.getAllVehicles);
+router.get('/average-speed', vehicleController.getAverageSpeed);
 router.get('/:id', vehicleController.getVehicleById);
 router.put('/:id', checkUser, vehicleController.updateVehicle);
 router.delete('/', checkUser, vehicleController.deleteVehicles);
