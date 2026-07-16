@@ -209,6 +209,20 @@ function OrderMapController({ coordinates, selectedOrder }) {
   return null
 }
 
+function OrderMapSizeController({ dependencies = [] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      map.invalidateSize()
+    })
+
+    return () => cancelAnimationFrame(frameId)
+  }, [map, ...dependencies])
+
+  return null
+}
+
 function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -684,6 +698,7 @@ function OrdersPage() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
+              <OrderMapSizeController dependencies={[selectedOrder?._id, gates.length, vehicles.length]} />
               <OrderMapController
                 coordinates={selectedOrder ? selectedOrderCoordinates : allMapCoordinates}
                 selectedOrder={selectedOrder}
