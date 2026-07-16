@@ -45,5 +45,15 @@ export default {
             console.error('Error deleting orders:', error);
             throw error;
         }
+    },
+
+    getOrdersForTimeline: async () => {
+        try {
+            const response = await Http.get('/orders/get-orders-for-timeline');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching orders for timeline:', error);
+            throw error;
+        }
     }
 }
