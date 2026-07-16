@@ -23,13 +23,13 @@ const DEFAULT_ZOOM = 6
 const SELECTED_ZOOM = 15
 
 const orderStatusColor = {
-  planned: '#faad14',
-  waiting: '#faad14',
-  running: '#1890ff',
-  delivering: '#1890ff',
-  unloading: '#18ff27',
-  completed: '#52c41a',
-  cancelled: '#f5222d',
+  planned: "#faad14",
+  running: "#1890ff",
+  waiting: "#722ed1",
+  delivering: "#13c2c2",
+  unloading: "#52c41a",
+  completed: "#389e0d",
+  cancelled: "#f5222d",
 }
 
 const statusDisplayName = {
@@ -909,6 +909,7 @@ function OrdersPage() {
                   visible={createModalVisible}
                   vehicles={vehicles}
                   gates={gates}
+                  speed={averageSpeed}
               />
           </div>
       )}

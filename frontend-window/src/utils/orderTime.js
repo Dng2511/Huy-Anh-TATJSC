@@ -1,6 +1,5 @@
 // src/utils/orderTime.js
 
-const AVG_SPEED = 40; // km/h
 export const WAITING_MINUTES = 2 * 60;
 export const UNLOADING_MINUTES = 2 * 60;
 
@@ -28,7 +27,9 @@ export function getDistance(lat1, lon1, lat2, lon2) {
 /**
  * Thời gian di chuyển giữa 2 cổng (phút)
  */
-export function estimateTravelMinutes(fromGateId, toGateId, gates) {
+export function estimateTravelMinutes(fromGateId, toGateId, gates, speed) {
+
+
     const fromGate = gates.find(
         (g) => String(g._id) === String(fromGateId)
     );
@@ -48,13 +49,13 @@ export function estimateTravelMinutes(fromGateId, toGateId, gates) {
         Number(toGate.locate.lng)
     );
 
-    return Math.round((distance / AVG_SPEED) * 60);
+    return Math.round((distance / speed) * 60);
 }
 
 /**
  * Thời gian xe đến cổng lấy hàng (phút)
  */
-export function estimateVehicleToGateMinutes(vehicle, gateId, gates) {
+export function estimateVehicleToGateMinutes(vehicle, gateId, gates, speed) {
     const gate = gates.find(
         (g) => String(g._id) === String(gateId)
     );
@@ -70,13 +71,13 @@ export function estimateVehicleToGateMinutes(vehicle, gateId, gates) {
         Number(gate.locate.lng)
     );
 
-    return Math.round((distance / AVG_SPEED) * 60);
+    return Math.round((distance / speed) * 60);
 }
 
 /**
  * Thời điểm dự kiến hoàn thành Order
  */
-export function estimateOrderFinishTime(order, gates, vehicle) {
+export function estimateOrderFinishTime(order, gates, vehicle, speed) {
     if (!order) return null;
 
     const pickupId = order.pickup?._id || order.pickup;
@@ -86,7 +87,8 @@ export function estimateOrderFinishTime(order, gates, vehicle) {
         estimateTravelMinutes(
             pickupId,
             deliveryId,
-            gates
+            gates,
+            speed
         );
 
     if (pickupToDeliveryMinutes == null) {
@@ -104,7 +106,8 @@ export function estimateOrderFinishTime(order, gates, vehicle) {
                 ? estimateVehicleToGateMinutes(
                     vehicle,
                     pickupId,
-                    gates
+                    gates,
+                    speed
                 )
                 : 0;
 
@@ -128,7 +131,8 @@ export function estimateOrderFinishTime(order, gates, vehicle) {
                 estimateVehicleToGateMinutes(
                     vehicle,
                     pickupId,
-                    gates
+                    gates,
+                    speed
                 );
 
             if (toPickupMinutes == null) {
@@ -164,7 +168,8 @@ export function estimateOrderFinishTime(order, gates, vehicle) {
                 estimateVehicleToGateMinutes(
                     vehicle,
                     deliveryId,
-                    gates
+                    gates,
+                    speed
                 );
 
             if (toDeliveryMinutes == null) {
@@ -265,17 +270,10 @@ export function estimateOrderStartTime(order) {
 
         case "waiting":
         case "unloading":
-            return new Date(order.updatedAt || Date.now());
-
         case "running":
         case "delivering":
             return new Date();
-
-        case "completed":
-        case "cancelled":
-            return new Date(order.orderDate);
-
         default:
-            return new Date(order.orderDate);
+            
     }
 }

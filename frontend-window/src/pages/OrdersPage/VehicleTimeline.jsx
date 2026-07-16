@@ -4,7 +4,7 @@ import { Tooltip } from "antd";
 import { getBarStyle, HOUR_WIDTH, ROW_HEIGHT } from "../../utils/timelineUtils";
 import orderApi from "../../services/Api/orderApi";
 
-export function buildTimelineData(vehicles, orders, gates) {
+export function buildTimelineData(vehicles, orders, gates, speed) {
     let minTime = null;
     let maxTime = null;
 
@@ -21,7 +21,8 @@ export function buildTimelineData(vehicles, orders, gates) {
                 const finishTime = estimateOrderFinishTime(
                     order,
                     gates,
-                    vehicle
+                    vehicle,
+                    speed
                 );
 
                 if (
@@ -266,6 +267,7 @@ export default function VehicleTimeline({
     visible,
     vehicles = [],
     gates = [],
+    speed = 40,
 }) {
 
     const [orders, setOrders] = useState([]);
@@ -294,7 +296,8 @@ export default function VehicleTimeline({
         return buildTimelineData(
             vehicles,
             orders,
-            gates
+            gates,
+            speed
         );
     }, [vehicles, orders, gates]);
 
