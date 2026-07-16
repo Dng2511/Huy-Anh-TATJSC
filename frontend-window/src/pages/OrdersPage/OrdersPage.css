@@ -54,6 +54,29 @@
   line-height: 1.35;
 }
 
+.modal-with-timeline {
+    width: max-content;
+}
+
+.timeline-panel {
+    position: fixed;
+
+    top: 110px;
+
+    left: calc(50% + 280px);
+
+    width: 500px;
+    height: 200px;
+
+    background: white;
+
+    border-radius: 8px;
+
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+
+    z-index: 1051;
+}
+
 @media (max-width: 992px) {
   .orders-map-panel {
     min-height: 0;
