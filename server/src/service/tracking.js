@@ -65,11 +65,12 @@ const updateStatusByTracking = async () => {
         if (speedCount < 5000) {
             let totalSpeed = 0;
             let validSpeedCount = 0;
-            const lastUpdate = new Date(vehicle.RealDate.match(/\d+/)[0] * 1);
-            const disconnected = Date.now() - lastUpdate.getTime() > 10 * 60 * 1000;
+            
 
             trackingData.forEach((vehicle) => {
-                if (vehicle.Speed !== undefined && vehicle.Speed !== null && vehicle.Speed > 0 && vehicle.disconnected !== true) {
+                const lastUpdate = new Date(vehicle.RealDate.match(/\d+/)[0] * 1);
+                const disconnected = Date.now() - lastUpdate.getTime() > 10 * 60 * 1000;
+                if (vehicle.Speed !== undefined && vehicle.Speed !== null && vehicle.Speed > 0 && disconnected !== true) {
                     totalSpeed += vehicle.Speed;
                     validSpeedCount++;
                 }

@@ -133,6 +133,10 @@ function getOrderStatusText(order, gates, vehicles, speed) {
       return 'Đang đến điểm lấy hàng';
     }
 
+    if (vehicle?.tracking?.liveStatus === 'Mất kết nối') {
+      return 'Đang đến điểm lấy hàng, mất kết nối GPS';
+    }
+
     const distance = getDisTance(
       vehicle.tracking.lat,
       vehicle.tracking.lng,
@@ -158,6 +162,10 @@ function getOrderStatusText(order, gates, vehicles, speed) {
 
     if (!vehicle?.tracking || !deliveryGate?.locate) {
       return 'Đang giao hàng';
+    }
+
+    if (vehicle?.tracking?.liveStatus === 'Mất kết nối') {
+      return 'Đang giao hàng, mất kết nối GPS';
     }
 
     const distance = getDisTance(
