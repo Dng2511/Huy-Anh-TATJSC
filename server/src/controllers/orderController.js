@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Vehicle = require('../models/Vehicle');
 const { getTrackingData } = require('./vehicleController');
@@ -45,17 +46,6 @@ const { getTrackingData } = require('./vehicleController');
                 waitingCost
             });
 
-            const vehicleStatus =
-                status === 'completed' || status === 'cancelled' || status === 'planned'
-                    ? 'idle'
-                    : 'running';
-
-            if (order.vehicle) {
-                await Vehicle.findByIdAndUpdate(order.vehicle, {
-                    status: vehicleStatus
-                });
-            }
-
 
             res.status(201).json(order);
 
@@ -73,19 +63,43 @@ const { getTrackingData } = require('./vehicleController');
             const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
             const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
             const skip = (page - 1) * limit;
+            const month = parseInt(req.query.month, 10);
+            const year = parseInt(req.query.year, 10);
+            const hasValidMonth = Number.isInteger(month) && month >= 1 && month <= 12;
+            const hasValidYear = Number.isInteger(year) && year > 0;
+
+            const castObjectIdFilter = (value) => {
+                if (!mongoose.isValidObjectId(value)) {
+                    return value;
+                }
+
+                return new mongoose.Types.ObjectId(value);
+            };
 
             if (req.query.partner) {
-                filters.partner = req.query.partner;
+                filters.partner = castObjectIdFilter(req.query.partner);
             }
             if (req.query.driver) {
-                filters.driver = req.query.driver;
+                filters.driver = castObjectIdFilter(req.query.driver);
             }
             if (req.query.vehicle) {
-                filters.vehicle = req.query.vehicle;
+                filters.vehicle = castObjectIdFilter(req.query.vehicle);
             }
 
-            if (req.query.status) {
-                filters.status = req.query.status;
+            if (hasValidYear && hasValidMonth) {
+                filters.orderDate = {
+                    $gte: new Date(year, month - 1, 1),
+                    $lt: new Date(year, month, 1),
+                };
+            } else if (hasValidYear) {
+                filters.orderDate = {
+                    $gte: new Date(year, 0, 1),
+                    $lt: new Date(year + 1, 0, 1),
+                };
+            } else if (hasValidMonth) {
+                filters.$expr = {
+                    $eq: [{ $month: '$orderDate' }, month],
+                };
             }
 
             const statusOrder = [
@@ -344,17 +358,6 @@ const { getTrackingData } = require('./vehicleController');
             // If changing from waiting -> non-waiting: set waitingEnd to today
             if (previousStatus === 'waiting' && newStatus !== 'waiting') {
                 order.waitingEnd = new Date();
-            }
-
-            const vehicleStatus =
-                newStatus === 'completed' || newStatus === 'cancelled' || newStatus === 'planned'
-                    ? 'idle'
-                    : 'running';
-
-            if (order.vehicle) {
-                await Vehicle.findByIdAndUpdate(order.vehicle, {
-                    status: vehicleStatus
-                });
             }
 
             await order.save();

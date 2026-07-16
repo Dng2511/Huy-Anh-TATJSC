@@ -42,6 +42,24 @@ const statusDisplayName = {
   cancelled: 'Hủy',
 };
 
+const monthOptions = [
+  { value: 1, label: 'Tháng 1' },
+  { value: 2, label: 'Tháng 2' },
+  { value: 3, label: 'Tháng 3' },
+  { value: 4, label: 'Tháng 4' },
+  { value: 5, label: 'Tháng 5' },
+  { value: 6, label: 'Tháng 6' },
+  { value: 7, label: 'Tháng 7' },
+  { value: 8, label: 'Tháng 8' },
+  { value: 9, label: 'Tháng 9' },
+  { value: 10, label: 'Tháng 10' },
+  { value: 11, label: 'Tháng 11' },
+  { value: 12, label: 'Tháng 12' },
+]
+
+const currentYear = new Date().getFullYear()
+const yearOptions = Array.from({ length: currentYear - 2019 }, (_, index) => currentYear - index)
+
 function getDisTance(lat1, lon1, lat2, lon2) {
   const R = 6371;
 
@@ -87,7 +105,8 @@ function getEtaText(distanceKm, speed) {
   if (!speed || speed <= 5) return 'chưa xác định';
 
   const minutes = Math.round((distanceKm / speed) * 60);
-  const arrival = new Date(Date.now() + minutes * 60 * 1000);
+  const totalTime = minutes + Math.floor(minutes / 720) * 180; // add 3 hours for every 12 hours of travel
+  const arrival = new Date(Date.now() + totalTime * 60 * 1000);
 
   return formatArrivalTime(arrival);
 }
@@ -148,7 +167,7 @@ function getOrderStatusText(order, gates, vehicles) {
       deliveryGate.locate.lng
     );
 
-    const eta = getEtaText(distance, vehicle.tracking.speed);
+    const eta = getEtaText(distance, 40);
 
     return `Đang giao hàng, cách điểm nhận hàng ${distance} km, dự kiến đến điểm giao vào \n${eta}`;
   }
@@ -198,7 +217,8 @@ function OrdersPage() {
   const [searchPartner, setSearchPartner] = useState(null)
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [createModalInitial, setCreateModalInitial] = useState(null)
-  const [searchStatus, setSearchStatus] = useState(null)
+  const [searchMonth, setSearchMonth] = useState(null)
+  const [searchYear, setSearchYear] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(8)
   const [totalItems, setTotalItems] = useState(0)
@@ -207,6 +227,7 @@ function OrdersPage() {
   const [vehicles, setVehicles] = useState([])
   const [vehicleLocation, setVehicleLocation] = useState(null)
   const [routeCoords, setRouteCoords] = useState(null)
+  const vehicleMarkerRefs = useRef({})
 
   const selectedOrderCoordinates = useMemo(() => {
     if (!selectedOrder) return []
@@ -328,13 +349,14 @@ function OrdersPage() {
     ])
   }
 
-  const fetchOrders = async (page = 1, partner = null, status = null) => {
+  const fetchOrders = async (page = 1, partner = null, month = null, year = null) => {
     try {
       const params = {
         page,
         limit: pageSize,
         ...(partner && { partner }),
-        ...(status && { status }),
+        ...(month && { month }),
+        ...(year && { year }),
       }
 
       const response = await orderApi.getOrders(params)
@@ -373,7 +395,7 @@ function OrdersPage() {
     deleteItems: (ids) => orderApi.deleteOrders(ids),
     onDeleted: async () => {
       setSelectedOrder(null)
-      await fetchOrders(1, searchPartner, searchStatus)
+      await fetchOrders(1, searchPartner, searchMonth, searchYear)
     },
     getEmptyMessage: () => 'Vui lòng chọn đơn hàng cần xóa',
     getConfirmMessage: () => 'Bạn có chắc chắn muốn xóa các đơn hàng đã chọn?',
@@ -386,7 +408,7 @@ function OrdersPage() {
 
   useEffect(() => {
     // initial load
-    fetchOrders(currentPage, searchPartner, searchStatus)
+    fetchOrders(currentPage, searchPartner, searchMonth, searchYear)
     fetchGates()
     fetchVehicles()
     fetchPartners()
@@ -395,29 +417,32 @@ function OrdersPage() {
   // When an order is created elsewhere (CreateOrderModal via context), refresh list
   useEffect(() => {
     const handleOrderCreated = () => {
-      fetchOrders(1, searchPartner, searchStatus)
+      fetchOrders(1, searchPartner, searchMonth, searchYear)
     }
 
     window.addEventListener('order:created', handleOrderCreated)
     return () => window.removeEventListener('order:created', handleOrderCreated)
-  }, [searchPartner, searchStatus])
+  }, [searchPartner, searchMonth, searchYear])
 
   useEffect(() => {
     // Refresh vehicles periodically
     const intervalId = setInterval(() => {
       fetchVehicles()
-      fetchOrders(currentPage, searchPartner, searchStatus)
+      fetchOrders(currentPage, searchPartner, searchMonth, searchYear)
     }, 5000)
 
     return () => clearInterval(intervalId)
-  }, [])
+  }, [currentPage, searchPartner, searchMonth, searchYear])
 
   useEffect(() => {
     // when selected order changes, fetch route
     if (!selectedOrder) {
+      setVehicleLocation(null)
       setRouteCoords(null)
       return
     }
+
+    setVehicleLocation(null)
 
     // Find pickup and delivery gates from the gates array
     const pickupGate = gates.find((g) => g._id === selectedOrder.pickup?._id)
@@ -440,18 +465,35 @@ function OrdersPage() {
     return () => clearInterval(intervalId)
   }, [selectedOrder?.vehicle?._id])
 
+  useEffect(() => {
+    const selectedVehicleId = selectedOrder?.vehicle?._id
+
+    Object.values(vehicleMarkerRefs.current).forEach((marker) => {
+      marker?.closePopup?.()
+    })
+
+    if (!selectedVehicleId) return
+
+    vehicleMarkerRefs.current[selectedVehicleId]?.openPopup?.()
+  }, [selectedOrder?.vehicle?._id, vehicles])
+
   const handleFilterPartner = (value) => {
     setSearchPartner(value || null)
-    fetchOrders(1, value || null, searchStatus)
+    fetchOrders(1, value || null, searchMonth, searchYear)
   }
 
-  const handleFilterStatus = (value) => {
-    setSearchStatus(value || null)
-    fetchOrders(1, searchPartner, value || null)
+  const handleFilterMonth = (value) => {
+    setSearchMonth(value || null)
+    fetchOrders(1, searchPartner, value || null, searchYear)
+  }
+
+  const handleFilterYear = (value) => {
+    setSearchYear(value || null)
+    fetchOrders(1, searchPartner, searchMonth, value || null)
   }
 
   const handlePageChange = (page) => {
-    fetchOrders(page, searchPartner, searchStatus)
+    fetchOrders(page, searchPartner, searchMonth, searchYear)
   }
 
   const handleRowClick = (record) => {
@@ -495,19 +537,30 @@ function OrdersPage() {
 
                 <div>
                   <Text style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>
-                    Trạng thái
+                    Thời gian
                   </Text>
-                  <Select
-                    placeholder="Chọn trạng thái"
-                    allowClear
-                    value={searchStatus}
-                    onChange={handleFilterStatus}
-                    options={Object.entries(statusDisplayName).map(([value, label]) => ({
-                      value,
-                      label,
-                    }))}
-                    style={{ width: '100%' }}
-                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
+                    <Select
+                      placeholder="Chọn tháng"
+                      allowClear
+                      value={searchMonth}
+                      onChange={handleFilterMonth}
+                      options={monthOptions}
+                      style={{ width: '100%' }}
+                    />
+
+                    <Select
+                      placeholder="Chọn năm"
+                      allowClear
+                      value={searchYear}
+                      onChange={handleFilterYear}
+                      options={yearOptions.map((year) => ({
+                        value: year,
+                        label: `${year}`,
+                      }))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -659,14 +712,20 @@ function OrdersPage() {
                 const lat = Number(vehicle?.tracking?.lat)
                 const lng = Number(vehicle?.tracking?.lng)
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-                // highlight selected vehicle only when the selected order is running
-                const isSelected = selectedOrder?.vehicle?._id === vehicle._id && selectedOrder?.status === 'running'
+                const isSelected = selectedOrder?.vehicle?._id === vehicle._id
                 const markerColors = getMarkerColors(vehicle)
                 const selectedColor = '#ff7a45'
 
                 return (
                   <CircleMarker
                     key={vehicle._id}
+                    ref={(marker) => {
+                      if (marker) {
+                        vehicleMarkerRefs.current[vehicle._id] = marker
+                      } else {
+                        delete vehicleMarkerRefs.current[vehicle._id]
+                      }
+                    }}
                     center={[lat, lng]}
                     radius={isSelected ? 12 : 8}
                     pathOptions={{
@@ -691,8 +750,6 @@ function OrdersPage() {
                         <Text>Tốc độ: {vehicle.tracking.speed} km/h</Text>
                         <br />
                         <Text>Địa chỉ: {vehicle.tracking.address}</Text>
-                        <br />
-                        <Text>Trạng thái: {vehicle.status}</Text>
                       </div>
                     </Popup>
                   </CircleMarker>
@@ -751,9 +808,9 @@ function OrdersPage() {
                     {vehicleLocation && Number.isFinite(vehicleLocation.lat) && Number.isFinite(vehicleLocation.lng) && (
                       (() => {
                         const currentVehicle = vehicles.find((v) => v._id === selectedOrder?.vehicle?._id)
-                        const isRunning = selectedOrder?.status === 'running'
+                        const isSelectedVehicle = Boolean(selectedOrder?.vehicle?._id)
                         const colors = currentVehicle ? getMarkerColors(currentVehicle) : { stroke: '#0958d9', fill: '#1677ff' }
-                        if (isRunning) {
+                        if (isSelectedVehicle) {
                           return (
                             <CircleMarker
                               center={[vehicleLocation.lat, vehicleLocation.lng]}
@@ -807,7 +864,7 @@ function OrdersPage() {
         onCreated={() => {
           setCreateModalVisible(false)
           setCreateModalInitial(null)
-          fetchOrders(1, searchPartner, searchStatus)
+          fetchOrders(1, searchPartner, searchMonth, searchYear)
         }}
       />
 
