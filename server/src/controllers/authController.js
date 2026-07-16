@@ -25,7 +25,7 @@ function setRefreshCookie(res, token) {
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure,
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
   });
 }
