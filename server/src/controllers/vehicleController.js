@@ -6,9 +6,10 @@ const { getTrackingData, getAverageSpeed } = require('../service/tracking');
 exports.createVehicle = async (req, res) => {
   try {
     const { licensePlate, fuelRate } = req.body;
+    const normalizedPlate = normalizePlate(licensePlate);
 
     const existingVehicle = await Vehicle.findOne({
-      $or: [{ licensePlate }],
+      licensePlate: normalizedPlate,
     });
 
     if (existingVehicle) {
@@ -18,7 +19,8 @@ exports.createVehicle = async (req, res) => {
     }
 
     const vehicle = new Vehicle({
-      licensePlate, fuelRate
+      licensePlate: normalizedPlate,
+      fuelRate,
     });
 
     await vehicle.save();
@@ -41,15 +43,15 @@ exports.getAllVehicles = async (req, res) => {
     const trackingMap = {};
 
     trackingData.forEach((item) => {
-      trackingMap[item.NormalizedPlate] = item;
+      trackingMap[normalizePlate(item.NormalizedPlate)] = item;
     });
 
     // nối dữ liệu
     const result = vehicles.map((vehicle) => {
-      const tracking =
-        trackingMap[vehicle.licensePlate];
-      
-      const lastUpdate = new Date(tracking?.RealDate.match(/\d+/)[0] * 1);
+      const tracking = trackingMap[normalizePlate(vehicle.licensePlate)];
+
+      const realDateMatch = tracking?.RealDate?.match(/\d+/);
+      const lastUpdate = realDateMatch ? new Date(realDateMatch[0] * 1) : null;
       const disconnected = lastUpdate ? now - lastUpdate.getTime() > 10 * 60 * 1000 : true;
 
       return {
@@ -129,7 +131,7 @@ exports.updateVehicle = async (req, res) => {
 
     const update = {};
 
-    if (typeof licensePlate !== 'undefined') update.licensePlate = licensePlate;
+    if (typeof licensePlate !== 'undefined') update.licensePlate = normalizePlate(licensePlate);
     if (typeof fuelRate !== 'undefined') update.fuelRate = fuelRate;
     if (typeof status !== 'undefined') update.status = status;
 
